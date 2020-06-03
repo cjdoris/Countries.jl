@@ -5,6 +5,7 @@ using DelimitedFiles
 export Country
 
 # download the country codes data
+# TODO: use artifacts
 global const CSV_URL = "https://datahub.io/core/country-codes/r/country-codes.csv"
 global const CSV_PATH = joinpath(@__DIR__, "..", "country-codes.csv")
 isfile(CSV_PATH) || Base.download(CSV_URL, CSV_PATH)

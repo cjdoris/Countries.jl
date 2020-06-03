@@ -2,6 +2,8 @@
 
 Julia package for handling the countries on Earth.
 
+It is based on the data [here](https://datahub.io/core/country-codes), which is downloaded the first time you load this package.
+
 ## Install
 
 ```
