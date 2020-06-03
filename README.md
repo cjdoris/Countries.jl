@@ -27,9 +27,11 @@ Country("EL REINO UNIDO DE GRAN BRETAÑA E IRLANDA DEL NORTE")
 
 We can retrieve information about a country `c` via property access:
 ```julia
+c = Country(:GBR)
 c.iso3166_numeric       # 826
 c.iso3166_alpha2        # :GB
 c.iso3166_alpha3        # :GBR
+c.cldr_display_name     # "UK"
 c.official_name_en      # "United Kingdom of Great Britain and Northern Ireland"
 c.unterm_arabic_formal  # "المملكة المتحدة لبريطانيا العظمى وآيرلندا الشمالية"
 c.tld_name              # ".uk"
