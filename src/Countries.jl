@@ -175,12 +175,16 @@ end
 Country(x::Country) = x
 
 const STRING_LOOKUP = copy(ORIG_STRING_LOOKUP)
-const STRING_BLACKLIST = Set{String}()
-
 const SYMBOL_LOOKUP = Dict{Symbol, Int}(Symbol(x) => y for (x,y) in STRING_LOOKUP)
-const SYMBOL_BLACKLIST = Set{Symbol}(Symbol(x) for x in STRING_BLACKLIST)
 
-function add_to_whitelist(x::AbstractString, c::Country)
+"""
+    add_alias(name, country::Country)
+
+Adds `name` as a global alias for `country`, so that calling `Country(name)` returns `country`.
+
+Consider raising an issue to fix this permanently: https://github.com/cjdoris/Countries.jl.
+"""
+function add_alias(x::AbstractString, c::Country)
     STRING_LOOKUP[x] = c.idx
     STRING_LOOKUP[lowercase(x)] = c.idx
     STRING_LOOKUP[uppercase(x)] = c.idx
@@ -190,16 +194,24 @@ function add_to_whitelist(x::AbstractString, c::Country)
     return
 end
 
-add_to_whitelist(x::Symbol, c::Country) =
-    add_to_whitelist(string(x), c)
+add_alias(x::Symbol, c::Country) =
+    add_alias(string(x), c)
 
+"""
+    add_to_blacklist(name)
+
+Adds `name` to the blacklist of aliases, so that `Country(name)` always raises an error.
+
+Consider raising an issue to fix this permanently: https://github.com/cjdoris/Countries.jl.
+"""
 function add_to_blacklist(x::AbstractString)
-    push!(STRING_BLACKLIST, x)
-    push!(STRING_BLACKLIST, lowercase(x))
-    push!(STRING_BLACKLIST, uppercase(x))
-    push!(SYMBOL_BLACKLIST, x)
-    push!(SYMBOL_BLACKLIST, lowercase(x))
-    push!(SYMBOL_BLACKLIST, uppercase(x))
+    STRING_LOOKUP[x] = -1
+    STRING_LOOKUP[lowercase(x)] = -1
+    STRING_LOOKUP[uppercase(x)] = -1
+    SYMBOL_LOOKUP[Symbol(x)] = -1
+    SYMBOL_LOOKUP[Symbol(lowercase(x))] = -1
+    SYMBOL_LOOKUP[Symbol(uppercase(x))] = -1
+    return
 end
 
 add_to_blacklist(x::Symbol) =
@@ -211,12 +223,12 @@ function Country(x::AbstractString)
     # look up x
     idx = get(STRING_LOOKUP, x, 0)
     idx > 0 && @goto done
-    x in STRING_BLACKLIST && invalidcountry(x)
+    idx < 0 && invalidcountry(x)
 
     # look up lowercase(x)
     idx = get(STRING_LOOKUP, lowercase(x), 0)
     idx > 0 && @goto keep
-    lowercase(x) in STRING_BLACKLIST && invalidcountry(x)
+    idx < 0 && invalidcountry(x)
 
     # now search for a match
     idxs = Set{Int}()
@@ -227,7 +239,7 @@ function Country(x::AbstractString)
     end
     if length(idxs) == 1 && length(x) > 3
         idx = first(idxs)
-        @warn "assuming $(repr(x)) is $(repr(Country(Val(:index), idx))); if this is an error, call `Countries.add_to_blacklist($(repr(x)))`; if not, consider calling `Countries.add_to_whitelist($(repr(x)), c)`"
+        @warn "assuming $(repr(x)) is $(repr(Country(Val(:index), idx))); see `add_alias` or `add_to_blacklist`"
         @goto keep
     elseif isempty(idxs)
         invalidcountry(x)
@@ -236,7 +248,9 @@ function Country(x::AbstractString)
     end
 
     @label keep
-    add_to_whitelist(x, Country(Val(:index), idx))
+    c = @inbounds Country(Val(:index), idx)
+    add_alias(x, c)
+    return c
 
     @label done
     return @inbounds Country(Val(:index), idx)
