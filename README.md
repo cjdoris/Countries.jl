@@ -25,6 +25,13 @@ Country(:GBR)
 Country("UK")
 Country("United Kingdom of Great Britain and Northern Ireland")
 Country("EL REINO UNIDO DE GRAN BRETAÑA E IRLANDA DEL NORTE")
+
+# When all else fails, if there is an unambiguous match, returns this and emits a warning
+Country("United Kingdom")
+Country("Great Britain")
+Country("Britain")
+Country("Reino Unido")
+Country("Grande-Bretagne")
 ```
 
 We can retrieve information about a country `c` via property access:
