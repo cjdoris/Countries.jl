@@ -4,16 +4,33 @@ using DelimitedFiles
 
 export Country
 
+struct InvalidCountryError <: Exception
+    value :: Any
+    msg :: Any
+end
+
+InvalidCountryError(value) = InvalidCountryError(value, nothing)
+
+function Base.showerror(io::IO, err::InvalidCountryError)
+    print(io, "invalid country specification: ", repr(err.value))
+    if err.msg !== nothing
+        println(io)
+        print(io, err.msg)
+    end
+end
+
+invalidcountry(args...) = throw(InvalidCountryError(args...))
+
 # download the country codes data
 # TODO: use artifacts
-global const CSV_URL = "https://datahub.io/core/country-codes/r/country-codes.csv"
-global const CSV_PATH = joinpath(@__DIR__, "..", "country-codes.csv")
+const CSV_URL = "https://datahub.io/core/country-codes/r/country-codes.csv"
+const CSV_PATH = joinpath(@__DIR__, "..", "country-codes.csv")
 isfile(CSV_PATH) || Base.download(CSV_URL, CSV_PATH)
 
 # load in the data
-global const DATAMATRIX = readdlm(CSV_PATH, ',', String)
-global const DATADICT = Dict(Symbol(x[1]) => x[2:end] for x in eachcol(DATAMATRIX))
-global const NUM_COUNTRIES = size(DATAMATRIX, 1) - 1
+const DATAMATRIX = readdlm(CSV_PATH, ',', String)
+const DATADICT = Dict(Symbol(x[1]) => x[2:end] for x in eachcol(DATAMATRIX))
+const NUM_COUNTRIES = size(DATAMATRIX, 1) - 1
 
 isnull(x::Integer) = iszero(x)
 isnull(x::AbstractString) = isempty(x)
@@ -96,13 +113,13 @@ struct Country
 end
 
 function country_from_lookup(lookup, x)
-    isnull(x) && error("$(repr(x)) is not a valid country")
+    isnull(x) && invalidcountry(x)
     idx = get(lookup, x, 0)
-    idx == 0 && error("$(repr(x)) is not a valid country")
+    idx == 0 && invalidcountry(x)
     @inbounds Country(Val(:index), idx)
 end
 
-global const PROPERTY_NAMES = tuple([x[1] for x in PROPERTIES]..., :iso3166_numeric)
+const PROPERTY_NAMES = tuple([x[1] for x in PROPERTIES]..., :iso3166_numeric)
 
 Base.propertynames(x::Country, private::Bool=false) = private ? tuple(fieldnames(Country)..., PROPERTY_NAMES...) : PROPERTY_NAMES
 
@@ -112,7 +129,7 @@ _getproperty(x::Country, ::Val{i}) where {i} =
 Base.getproperty(x::Country, i::Symbol) =
     _getproperty(x, Val(i))
 
-global const STRING_LOOKUP = Dict{String, Int}()
+const ORIG_STRING_LOOKUP = Dict{String, Int}()
 
 for (name, col, type, otype, isunique, isglobal) in PROPERTIES
     uname = Symbol(uppercase(string(name)))
@@ -143,7 +160,7 @@ for (name, col, type, otype, isunique, isglobal) in PROPERTIES
         else
             @eval global const $lookupname = make_lookup($listname)
         end
-        isglobal && @eval merge!((a,b) -> a==b ? a : error("clash while merging lookups $(repr(a)) $(repr($name))"), STRING_LOOKUP, $lookupname)
+        isglobal && @eval merge!((a,b) -> a==b ? a : error("clash while merging lookups $(repr(a)) $(repr($name))"), ORIG_STRING_LOOKUP, $lookupname)
         if type === String
             @eval Country(::Val{$(QuoteNode(name))}, x::AbstractString) = country_from_lookup($lookupname, x)
             @eval Country(::Val{$(QuoteNode(name))}, x::Symbol) = country_from_lookup($symlookupname, x)
@@ -154,11 +171,87 @@ for (name, col, type, otype, isunique, isglobal) in PROPERTIES
     @eval _getproperty(x::Country, ::Val{$(QuoteNode(name))}) = $name(x)
 end
 
-global const SYMBOL_LOOKUP = Dict{Symbol, Int}(Symbol(x) => y for (x,y) in STRING_LOOKUP)
 
 Country(x::Country) = x
-Country(x::AbstractString) = country_from_lookup(STRING_LOOKUP, x)
-Country(x::Symbol) = country_from_lookup(SYMBOL_LOOKUP, x)
+
+const STRING_LOOKUP = copy(ORIG_STRING_LOOKUP)
+const STRING_BLACKLIST = Set{String}()
+
+const SYMBOL_LOOKUP = Dict{Symbol, Int}(Symbol(x) => y for (x,y) in STRING_LOOKUP)
+const SYMBOL_BLACKLIST = Set{Symbol}(Symbol(x) for x in STRING_BLACKLIST)
+
+function add_to_whitelist(x::AbstractString, c::Country)
+    STRING_LOOKUP[x] = c.idx
+    STRING_LOOKUP[lowercase(x)] = c.idx
+    STRING_LOOKUP[uppercase(x)] = c.idx
+    SYMBOL_LOOKUP[Symbol(x)] = c.idx
+    SYMBOL_LOOKUP[Symbol(lowercase(x))] = c.idx
+    SYMBOL_LOOKUP[Symbol(uppercase(x))] = c.idx
+    return
+end
+
+add_to_whitelist(x::Symbol, c::Country) =
+    add_to_whitelist(string(x), c)
+
+function add_to_blacklist(x::AbstractString)
+    push!(STRING_BLACKLIST, x)
+    push!(STRING_BLACKLIST, lowercase(x))
+    push!(STRING_BLACKLIST, uppercase(x))
+    push!(SYMBOL_BLACKLIST, x)
+    push!(SYMBOL_BLACKLIST, lowercase(x))
+    push!(SYMBOL_BLACKLIST, uppercase(x))
+end
+
+add_to_blacklist(x::Symbol) =
+    add_to_blacklist(string(x))
+
+function Country(x::AbstractString)
+    isnull(x) && invalidcountry(x)
+
+    # look up x
+    idx = get(STRING_LOOKUP, x, 0)
+    idx > 0 && @goto done
+    x in STRING_BLACKLIST && invalidcountry(x)
+
+    # look up lowercase(x)
+    idx = get(STRING_LOOKUP, lowercase(x), 0)
+    idx > 0 && @goto keep
+    lowercase(x) in STRING_BLACKLIST && invalidcountry(x)
+
+    # now search for a match
+    idxs = Set{Int}()
+    for (y,idx) in pairs(ORIG_STRING_LOOKUP)
+        if idx > 0 && occursin(lowercase(x), lowercase(y))
+            push!(idxs, idx)
+        end
+    end
+    if length(idxs) == 1 && length(x) > 3
+        idx = first(idxs)
+        @warn "assuming $(repr(x)) is $(repr(Country(Val(:index), idx))); if this is an error, call `Countries.add_to_blacklist($(repr(x)))`; if not, consider calling `Countries.add_to_whitelist($(repr(x)), c)`"
+        @goto keep
+    elseif isempty(idxs)
+        invalidcountry(x)
+    else
+        invalidcountry(x, "maybe you meant one of $(sort(Country.(Val(:index), collect(idxs))))")
+    end
+
+    @label keep
+    add_to_whitelist(x, Country(Val(:index), idx))
+
+    @label done
+    return @inbounds Country(Val(:index), idx)
+end
+
+function Country(x::Symbol)
+    isnull(x) && invalidcountry(x)
+
+    idx = get(SYMBOL_LOOKUP, x, 0)
+    idx > 0 && return @inbounds Country(Val(:index), idx)
+    x in SYMBOL_BLACKLIST && invalidcountry(x)
+
+    return Country(string(x))
+end
+
 Country(x::Integer) = country_from_lookup(ISO3166_NUMERIC_LOOKUP, x)
 
 global const ALL_COUNTRIES = Country[Country(x) for x in ISO3166_ALPHA2_LIST if !isnull(x)]
