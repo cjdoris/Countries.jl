@@ -40,19 +40,19 @@ c = Country(:GBR)
 c.iso3166_numeric       # 826
 c.iso3166_alpha2        # :GB
 c.iso3166_alpha3        # :GBR
-c.cldr_display_name     # "UK"
+c.cldr_name_en          # "UK"
 c.official_name_en      # "United Kingdom of Great Britain and Northern Ireland"
-c.unterm_arabic_formal  # "المملكة المتحدة لبريطانيا العظمى وآيرلندا الشمالية"
+c.unterm_formal_name_ar # "المملكة المتحدة لبريطانيا العظمى وآيرلندا الشمالية"
 c.tld_name              # ".uk"
-c.continent_name        # "EU"
-c.capital_name          # "London"
+c.continent_code        # :EU
+c.capital_name_en       # "London"
 ```
 
 Alternatively there are functions of the same name. The argument can be anything convertible to a country. The return type can be specified:
 ```julia
 c = Country(:GBR)
-Countries.continent_name(c)            # "EU"
-Countries.continent_name(String, c)    # "EU"
-Countries.continent_name(Symbol, c)    # :EU
-Countries.continent_name(Symbol, :GBR) # :EU
+Countries.continent_code(c)            # :EU
+Countries.continent_code(Symbol, c)    # :EU
+Countries.continent_code(String, c)    # "EU"
+Countries.continent_code(String, :GBR) # "EU"
 ```

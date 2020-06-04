@@ -71,26 +71,26 @@ global const PROPERTIES = [
     (:official_name_ru, Symbol("official_name_ru"), String, String, true, true),
     (:iso3166_alpha2, Symbol("ISO3166-1-Alpha-2"), String, Symbol, true, true),
     (:iso3166_alpha3, Symbol("ISO3166-1-Alpha-3"), String, Symbol, true, true),
-    (:unterm_arabic_formal, Symbol("UNTERM Arabic Formal"), String, String, true, true),
-    (:unterm_arabic_short, Symbol("UNTERM Arabic Short"), String, String, true, true),
-    (:unterm_chinese_formal, Symbol("UNTERM Chinese Formal"), String, String, true, true),
-    (:unterm_chinese_short, Symbol("UNTERM Chinese Short"), String, String, true, true),
-    (:unterm_english_formal, Symbol("UNTERM English Formal"), String, String, true, true),
-    (:unterm_english_short, Symbol("UNTERM English Short"), String, String, true, true),
-    (:unterm_french_formal, Symbol("UNTERM French Formal"), String, String, true, true),
-    (:unterm_french_short, Symbol("UNTERM French Short"), String, String, true, true),
-    (:unterm_russian_formal, Symbol("UNTERM Russian Formal"), String, String, true, true),
-    (:unterm_russian_short, Symbol("UNTERM Russian Short"), String, String, true, true),
-    (:unterm_spanish_formal, Symbol("UNTERM Spanish Formal"), String, String, true, true),
-    (:unterm_spanish_short, Symbol("UNTERM Spanish Short"), String, String, true, true),
-    (:cldr_display_name, Symbol("CLDR display name"), String, String, true, true),
+    (:unterm_formal_name_ar, Symbol("UNTERM Arabic Formal"), String, String, true, true),
+    (:unterm_short_name_ar, Symbol("UNTERM Arabic Short"), String, String, true, true),
+    (:unterm_formal_name_cn, Symbol("UNTERM Chinese Formal"), String, String, true, true),
+    (:unterm_short_name_cn, Symbol("UNTERM Chinese Short"), String, String, true, true),
+    (:unterm_formal_name_en, Symbol("UNTERM English Formal"), String, String, true, true),
+    (:unterm_short_name_en, Symbol("UNTERM English Short"), String, String, true, true),
+    (:unterm_formal_name_fr, Symbol("UNTERM French Formal"), String, String, true, true),
+    (:unterm_short_name_fr, Symbol("UNTERM French Short"), String, String, true, true),
+    (:unterm_formal_name_ru, Symbol("UNTERM Russian Formal"), String, String, true, true),
+    (:unterm_short_name_ru, Symbol("UNTERM Russian Short"), String, String, true, true),
+    (:unterm_formal_name_es, Symbol("UNTERM Spanish Formal"), String, String, true, true),
+    (:unterm_short_name_es, Symbol("UNTERM Spanish Short"), String, String, true, true),
+    (:cldr_name_en, Symbol("CLDR display name"), String, String, true, true),
     (:tld_name, Symbol("TLD"), String, String, false, false),
-    (:wmo_name, Symbol("WMO"), String, String, false, false),
-    (:fips_name, Symbol("FIPS"), String, String, false, false),
-    (:fifa_name, Symbol("FIFA"), String, String, true, false),
-    (:ioc_name, Symbol("IOC"), String, String, true, false),
-    (:continent_name, Symbol("Continent"), String, String, false, false),
-    (:capital_name, Symbol("Capital"), String, String, false, false),
+    (:wmo_code, Symbol("WMO"), String, Symbol, false, false),
+    (:fips_code, Symbol("FIPS"), String, Symbol, false, false),
+    (:fifa_code, Symbol("FIFA"), String, Symbol, true, false),
+    (:ioc_code, Symbol("IOC"), String, Symbol, true, false),
+    (:continent_code, Symbol("Continent"), String, Symbol, false, false),
+    (:capital_name_en, Symbol("Capital"), String, String, false, false),
 ]
 
 """
@@ -105,10 +105,10 @@ Countries have many properties which can be accessed like `c.property`. See `pro
 The same properties can be accessed via functions `property(c)`. In this case, `c` can be anything convertible to a country. Additionally the return type of textual properties can be specified as `property(String, c)` or `property(Symbol, c)`.
 """
 struct Country
-    idx :: Int
+    idx :: Int16
     Base.@propagate_inbounds function Country(::Val{:index}, idx::Integer)
         @boundscheck checkbounds(OFFICIAL_NAME_EN_LIST, idx)
-        new(convert(Int, idx))
+        new(idx)
     end
 end
 
