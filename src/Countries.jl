@@ -228,6 +228,9 @@ function Country(x::AbstractString)
     idx > 0 && @goto keep
     idx < 0 && invalidcountry(x)
 
+    # short strings must match exactly (i.e. country codes)
+    length(x) ≤ 3 && invalidcountry(x)
+
     # now search for a match
     idxs = Set{Int}()
     for (y,idx) in pairs(ORIG_STRING_LOOKUP)
@@ -235,12 +238,12 @@ function Country(x::AbstractString)
             push!(idxs, idx)
         end
     end
-    if length(idxs) == 1 && length(x) > 3
+    if isempty(idxs)
+        invalidcountry(x)
+    elseif length(idxs) == 1
         idx = first(idxs)
         @warn "assuming $(repr(x)) is $(repr(Country(Val(:index), idx))); see `add_alias` or `add_to_blacklist`"
         @goto keep
-    elseif isempty(idxs)
-        invalidcountry(x)
     else
         invalidcountry(x, "maybe you meant one of $(sort(Country.(Val(:index), collect(idxs))))")
     end

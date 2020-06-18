@@ -1,3 +1,4 @@
-/deps/country-codes.csv
-/deps/build.log
-/Manifest.toml
+*.csv
+*.log
+Manifest.toml
+.vscode
