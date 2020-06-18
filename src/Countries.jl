@@ -270,7 +270,7 @@ Country(x::Integer) = country_from_lookup(ISO3166_NUMERIC_LOOKUP, x)
 
 global const ALL_COUNTRIES = Country[Country(x) for x in ISO3166_ALPHA2_LIST if !isnull(x)]
 
-Base.print(io::IO, x::Country) = print(io, cldr_display_name(x))
+Base.print(io::IO, x::Country) = print(io, cldr_name_en(x))
 
 Base.show(io::IO, x::Country) =
     if get(io, :typeinfo, Union{}) == typeof(x)
