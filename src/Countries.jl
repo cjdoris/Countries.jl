@@ -1,6 +1,6 @@
 module Countries
 
-using DelimitedFiles
+using DelimitedFiles, Compat
 
 export Country
 
