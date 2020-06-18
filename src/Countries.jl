@@ -262,7 +262,7 @@ function Country(x::Symbol)
 
     idx = get(SYMBOL_LOOKUP, x, 0)
     idx > 0 && return @inbounds Country(Val(:index), idx)
-    x in SYMBOL_BLACKLIST && invalidcountry(x)
+    idx < 0 && invalidcountry(x)
 
     return Country(string(x))
 end
