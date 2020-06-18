@@ -1,5 +1,8 @@
 # Countries.jl
 
+[![Build Status](https://travis-ci.com/cjdoris/Countries.jl.svg?branch=master)](https://travis-ci.com/cjdoris/Countries.jl)
+[![codecov](https://codecov.io/gh/cjdoris/Countries.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/cjdoris/Countries.jl)
+
 Julia package for handling the countries on Earth. Useful for example to decode countries encoded differently in different data sets.
 
 It is based on the data [here](https://datahub.io/core/country-codes), which is downloaded the first time you load this package.
