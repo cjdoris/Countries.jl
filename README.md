@@ -1,5 +1,6 @@
 # Countries.jl
 
+[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliahub.com/docs/Countries/)
 [![Build Status](https://travis-ci.com/cjdoris/Countries.jl.svg?branch=master)](https://travis-ci.com/cjdoris/Countries.jl)
 [![codecov](https://codecov.io/gh/cjdoris/Countries.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/cjdoris/Countries.jl)
 
