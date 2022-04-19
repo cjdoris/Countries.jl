@@ -13,7 +13,7 @@ more user-defined countries or add aliases for existing countries.
 ## Install
 
 ```
-] add https://github.com/cjdoris/Countries.jl.git
+pkg> add https://github.com/cjdoris/Countries.jl.git
 ```
 
 ## Documentation
