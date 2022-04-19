@@ -24,7 +24,7 @@ Country("United Kingdom")
 Country("Britain")
 
 # by alias
-Countries.add_country_alias("UK", Country(826))
+Countries.add_alias("UK", Country(826))
 Country("uk")
 ```
 
@@ -88,7 +88,7 @@ Country(x::AbstractString) = get(COUNTRY_LOOKUP, x) do
     u = uppercase(x)
     get(COUNTRY_LOOKUP, x) do
         msg1 = "$(repr(x)) is not the name of a known country"
-        msg2 = "you may use Countries.add_country to add a new country or Countries.add_country_alias to add an alias for an existing country"
+        msg2 = "you may use Countries.add_country to add a new country or Countries.add_alias to add an alias for an existing country"
         if length(u) > 3
             cs = Set{Country}()
             ks = Set{String}()
@@ -155,11 +155,11 @@ function add_country(; code, alpha2="", alpha3="", name="")
 end
 
 """
-    add_country_alias(name, country::Country)
+    add_alias(name, country::Country)
 
 Add an alias so that `Country(name)` returns `country`.
 """
-function add_country_alias(name, country::Country)
+function add_alias(name, country::Country)
     name = convert(String, name)
     aliases = [name, lowercase(name), uppercase(name)]
     for k in aliases
