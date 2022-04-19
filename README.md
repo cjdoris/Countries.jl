@@ -1,12 +1,14 @@
 # Countries.jl
 
 [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliahub.com/docs/Countries/)
-[![Build Status](https://travis-ci.com/cjdoris/Countries.jl.svg?branch=master)](https://travis-ci.com/cjdoris/Countries.jl)
 [![codecov](https://codecov.io/gh/cjdoris/Countries.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/cjdoris/Countries.jl)
 
-Julia package for handling the countries on Earth. Useful for example to decode countries encoded differently in different data sets.
+Julia package for handling the countries on Earth.
 
-It is based on the data [here](https://datahub.io/core/country-codes), which is downloaded the first time you load this package.
+It is based on the data here: https://github.com/stefangabos/world_countries.
+
+All countries/territories/etc. in ISO-3166 are defined by default. It is possible to add
+more user-defined countries or add aliases for existing countries.
 
 ## Install
 
@@ -18,45 +20,27 @@ It is based on the data [here](https://datahub.io/core/country-codes), which is 
 
 This module exports one type, `Country`. The following are all ways to construct the UK:
 ```julia
-# ISO3166 codes (numeric, strings or symbols)
+# ISO-3166 codes
 Country(826)
-Country("GB")
-Country(:GB)
 Country("GBR")
-Country(:GBR)
+Country("gbr")
+Country("GB")
 
-# Official name, UN name (any case, any language) or CLDR display name
-Country("UK")
-Country("United Kingdom of Great Britain and Northern Ireland")
-Country("EL REINO UNIDO DE GRAN BRETAÑA E IRLANDA DEL NORTE")
-
-# When all else fails, if there is an unambiguous match, returns this and emits a warning
+# by name (or unambiguous partial name)
+Country("United Kingdom of Great Britain and Nortern Ireland")
 Country("United Kingdom")
-Country("Great Britain")
 Country("Britain")
-Country("Reino Unido")
-Country("Grande-Bretagne")
+
+# by alias
+Countries.add_country_alias("UK", Country(826))
+Country("uk")
 ```
 
-We can retrieve information about a country `c` via property access:
+We can retrieve information about a country by property access:
 ```julia
-c = Country(:GBR)
-c.iso3166_numeric       # 826
-c.iso3166_alpha2        # :GB
-c.iso3166_alpha3        # :GBR
-c.cldr_name_en          # "UK"
-c.official_name_en      # "United Kingdom of Great Britain and Northern Ireland"
-c.unterm_formal_name_ar # "المملكة المتحدة لبريطانيا العظمى وآيرلندا الشمالية"
-c.tld_name              # ".uk"
-c.continent_code        # :EU
-c.capital_name_en       # "London"
-```
-
-Alternatively there are functions of the same name. The argument can be anything convertible to a country. The return type can be specified:
-```julia
-c = Country(:GBR)
-Countries.continent_code(c)            # :EU
-Countries.continent_code(Symbol, c)    # :EU
-Countries.continent_code(String, c)    # "EU"
-Countries.continent_code(String, :GBR) # "EU"
+c = Country("GBR")
+c.code    # 826
+c.alpha2  # "GB"
+c.alpha3  # "GBR"
+c.name    # "United Kingdom of Great Britain and Northern Ireland"
 ```

@@ -1,290 +1,258 @@
 module Countries
 
-using DelimitedFiles, Compat
+using Artifacts: @artifact_str
+using DelimitedFiles: readdlm
 
 export Country
 
-struct InvalidCountryError <: Exception
-    value :: Any
-    msg :: Any
-end
-
-InvalidCountryError(value) = InvalidCountryError(value, nothing)
-
-function Base.showerror(io::IO, err::InvalidCountryError)
-    print(io, "invalid country specification: ", repr(err.value))
-    if err.msg !== nothing
-        println(io)
-        print(io, err.msg)
-    end
-end
-
-invalidcountry(args...) = throw(InvalidCountryError(args...))
-
-# check the data exists
-const CSV_PATH = joinpath(@__DIR__, "..", "deps", "country-codes.csv")
-isfile(CSV_PATH) || error("Country data not available. Try `using Pkg; Pkg.build(\"Countries\")` and restart Julia.")
-
-# load in the data
-const DATAMATRIX = readdlm(CSV_PATH, ',', String)
-const DATADICT = Dict(Symbol(x[1]) => x[2:end] for x in eachcol(DATAMATRIX))
-const NUM_COUNTRIES = size(DATAMATRIX, 1) - 1
-
-isnull(x::Integer) = iszero(x)
-isnull(x::AbstractString) = isempty(x)
-isnull(x::Symbol) = x == Symbol("")
-
-function make_lookup(xs; aliases=x->(x,))
-    ys = Dict{eltype(xs), Int}()
-    for (i,x) in enumerate(xs)
-        isnull(x) && continue
-        for x2 in aliases(x)
-            j = get(ys, x2, i)
-            j == i || @error "clash" i j x x2
-            ys[x2] = i
-        end
-    end
-    ys
-end
-
-make_strings_lookup(xs) = make_lookup(xs, aliases=x->(x, lowercase(x), uppercase(x)))
-
-function make_int_lookup(xs)
-    ys = zeros(Int, maximum(xs))
-    for (i,x) in enumerate(xs)
-        isnull(x) && continue
-        @assert ys[x] == 0
-        ys[x] = i
-    end
-    ys
-end
-
-global const PROPERTIES = [
-    (:iso3166_numeric, Symbol("ISO3166-1-numeric"), Int, Int, true, false),
-    (:official_name_ar, Symbol("official_name_ar"), String, String, true, true),
-    (:official_name_cn, Symbol("official_name_cn"), String, String, true, true),
-    (:official_name_en, Symbol("official_name_en"), String, String, true, true),
-    (:official_name_es, Symbol("official_name_es"), String, String, true, true),
-    (:official_name_fr, Symbol("official_name_fr"), String, String, true, true),
-    (:official_name_ru, Symbol("official_name_ru"), String, String, true, true),
-    (:iso3166_alpha2, Symbol("ISO3166-1-Alpha-2"), String, Symbol, true, true),
-    (:iso3166_alpha3, Symbol("ISO3166-1-Alpha-3"), String, Symbol, true, true),
-    (:unterm_formal_name_ar, Symbol("UNTERM Arabic Formal"), String, String, true, true),
-    (:unterm_short_name_ar, Symbol("UNTERM Arabic Short"), String, String, true, true),
-    (:unterm_formal_name_cn, Symbol("UNTERM Chinese Formal"), String, String, true, true),
-    (:unterm_short_name_cn, Symbol("UNTERM Chinese Short"), String, String, true, true),
-    (:unterm_formal_name_en, Symbol("UNTERM English Formal"), String, String, true, true),
-    (:unterm_short_name_en, Symbol("UNTERM English Short"), String, String, true, true),
-    (:unterm_formal_name_fr, Symbol("UNTERM French Formal"), String, String, true, true),
-    (:unterm_short_name_fr, Symbol("UNTERM French Short"), String, String, true, true),
-    (:unterm_formal_name_ru, Symbol("UNTERM Russian Formal"), String, String, true, true),
-    (:unterm_short_name_ru, Symbol("UNTERM Russian Short"), String, String, true, true),
-    (:unterm_formal_name_es, Symbol("UNTERM Spanish Formal"), String, String, true, true),
-    (:unterm_short_name_es, Symbol("UNTERM Spanish Short"), String, String, true, true),
-    (:cldr_name_en, Symbol("CLDR display name"), String, String, true, true),
-    (:tld_name, Symbol("TLD"), String, String, false, false),
-    (:wmo_code, Symbol("WMO"), String, Symbol, false, false),
-    (:fips_code, Symbol("FIPS"), String, Symbol, false, false),
-    (:fifa_code, Symbol("FIFA"), String, Symbol, true, false),
-    (:ioc_code, Symbol("IOC"), String, Symbol, true, false),
-    (:continent_code, Symbol("Continent"), String, Symbol, false, false),
-    (:capital_name_en, Symbol("Capital"), String, String, false, false),
-]
-
 """
-    Country(x)
+    Country(id)
 
-Convert `x` to a country.
+A country with the given `id`.
 
-The argument may be the official name, the UN short or formal name, or the ISO3166 numeric or alphabetic code names.
+The following are all ways to construct the UK:
+```
+# ISO-3166 codes
+Country(826)
+Country("GBR")
+Country("gbr")
+Country("GB")
 
-Countries have many properties which can be accessed like `c.property`. See `propertynames(c)` for a list of them.
+# by name (or unambiguous partial name)
+Country("United Kingdom of Great Britain and Nortern Ireland")
+Country("United Kingdom")
+Country("Britain")
 
-The same properties can be accessed via functions `property(c)`. In this case, `c` can be anything convertible to a country. Additionally the return type of textual properties can be specified as `property(String, c)` or `property(Symbol, c)`.
+# by alias
+Countries.add_country_alias("UK", Country(826))
+Country("uk")
+```
+
+We can retrieve information about a country by property access:
+```
+c = Country("GBR")
+c.code    # 826
+c.alpha2  # "GB"
+c.alpha3  # "GBR"
+c.name    # "United Kingdom of Great Britain and Northern Ireland"
+```
 """
 struct Country
-    idx :: Int16
-    Base.@propagate_inbounds function Country(::Val{:index}, idx::Integer)
-        @boundscheck checkbounds(OFFICIAL_NAME_EN_LIST, idx)
-        new(idx)
-    end
+    code::Int16
+    Country(code::Integer) = new(_check_code(code))
 end
 
-function country_from_lookup(lookup, x)
-    isnull(x) && invalidcountry(x)
-    idx = get(lookup, x, 0)
-    idx == 0 && invalidcountry(x)
-    @inbounds Country(Val(:index), idx)
+struct CountryInfo
+    alpha2::String
+    alpha3::String
+    name::String
+    CountryInfo(; alpha2="", alpha3="", name="") = new(_check_alpha2(alpha2), _check_alpha3(alpha3), _check_name(name))
 end
 
-const PROPERTY_NAMES = tuple([x[1] for x in PROPERTIES]..., :iso3166_numeric)
+function _check_code(x)
+    x = convert(Int16, x)
+    1 ≤ x ≤ 999 || error("code must be between 1 and 999")
+    return x
+end
 
-Base.propertynames(x::Country, private::Bool=false) = private ? tuple(fieldnames(Country)..., PROPERTY_NAMES...) : PROPERTY_NAMES
-
-_getproperty(x::Country, ::Val{i}) where {i} =
-    getfield(x, i)
-
-Base.getproperty(x::Country, i::Symbol) =
-    _getproperty(x, Val(i))
-
-const ORIG_STRING_LOOKUP = Dict{String, Int}()
-
-for (name, col, type, otype, isunique, isglobal) in PROPERTIES
-    uname = Symbol(uppercase(string(name)))
-    listname = Symbol(uname, :_LIST)
-    lookupname = Symbol(uname, :_LOOKUP)
-    symlistname = Symbol(uname, :_SYMBOL_LIST)
-    symlookupname = Symbol(uname, :_SYMBOL_LOOKUP)
-    rawdata = DATADICT[col]
-    if type === String
-        data = rawdata
-        @eval global const $listname = $data
-        @eval global const $symlistname = Symbol.($listname)
-        @eval $name(::Type{String}, x::Country) = @inbounds $listname[x.idx]
-        @eval $name(::Type{Symbol}, x::Country) = @inbounds $symlistname[x.idx]
-    elseif type === Int
-        data = Int[isempty(x) ? 0 : parse(Int, x) for x in rawdata]
-        @eval global const $listname = $data
-        @eval $name(::Type{Int}, x::Country) = @inbounds $listname[x.idx]
-    else
-        error()
+function _check_alpha2(x)
+    x = uppercase(convert(String, x))
+    if !isempty(x)
+        length(x) == 2 || error("alpha2 must be empty or length 2")
+        all('A' ≤ c ≤ 'Z' for c in x) || error("alpha2 must consist only of letters")
     end
-    @eval $name(T::Type, x::Country) = throw(MethodError($name, (T,x)))
-    @eval $name(T::Type, x) = $name(T, Country(x))
-    @eval $name(x) = $name($otype, x)
-    if isunique
-        if type === String
-            @eval global const $lookupname = make_strings_lookup($listname)
+    return x
+end
+
+function _check_alpha3(x)
+    x = uppercase(convert(String, x))
+    if !isempty(x)
+        length(x) == 3 || error("alpha3 must be empty or length 3")
+        all('A' ≤ c ≤ 'Z' for c in x) || error("alpha3 must consist only of letters")
+    end
+    return x
+end
+
+function _check_name(x)
+    x = convert(String, x)
+    return x
+end
+
+const DATA_ROOT = joinpath(artifact"countries-2.5.0", "world_countries-2.5.0")
+
+const COUNTRY_INFO = [CountryInfo() for i in 1:999]
+
+const COUNTRY_LOOKUP = Dict{String,Country}()
+
+Country(x::AbstractString) = get(COUNTRY_LOOKUP, x) do
+    u = uppercase(x)
+    get(COUNTRY_LOOKUP, x) do
+        msg1 = "$(repr(x)) is not the name of a known country"
+        msg2 = "you may use Countries.add_country to add a new country or Countries.add_country_alias to add an alias for an existing country"
+        if length(u) > 3
+            cs = Set{Country}()
+            ks = Set{String}()
+            for (k, c) in COUNTRY_LOOKUP
+                if occursin(u, k)
+                    push!(ks, k)
+                    push!(cs, c)
+                end
+            end
+            if isempty(cs)
+                error("$msg1; $msg2")
+            elseif length(cs) == 1
+                #@warn "$msg1, but unambiguously matches $(repr(first(ks))); $msg2"
+                return first(cs)
+            else
+                kk = join([repr(k) for k in ks], ", ", " or ")
+                error("$msg1 (perhaps you meant one of $kk?); $msg2")
+            end
         else
-            @eval global const $lookupname = make_lookup($listname)
-        end
-        isglobal && @eval merge!((a,b) -> a==b ? a : error("clash while merging lookups $(repr(a)) $(repr($name))"), ORIG_STRING_LOOKUP, $lookupname)
-        if type === String
-            @eval Country(::Val{$(QuoteNode(name))}, x::AbstractString) = country_from_lookup($lookupname, x)
-            @eval Country(::Val{$(QuoteNode(name))}, x::Symbol) = country_from_lookup($symlookupname, x)
-        elseif type === Int
-            @eval Country(::Val{$(QuoteNode(name))}, x::Integer) = country_from_lookup($symlookupname, x)
+            error("$msg1; $msg2")
         end
     end
-    @eval _getproperty(x::Country, ::Val{$(QuoteNode(name))}) = $name(x)
 end
 
-
-Country(x::Country) = x
-
-const STRING_LOOKUP = copy(ORIG_STRING_LOOKUP)
-const SYMBOL_LOOKUP = Dict{Symbol, Int}(Symbol(x) => y for (x,y) in STRING_LOOKUP)
+function add_default_countries()
+    table = readdlm(joinpath(DATA_ROOT, "data", "countries", "en", "world.csv"), ',', String)
+    @assert size(table, 2) == 4
+    @assert table[1,:] == ["id", "alpha2", "alpha3", "name"]
+    for i in 2:size(table, 1)
+        code = parse(Int16, table[i,1])
+        alpha2 = table[i,2]
+        alpha3 = table[i,3]
+        name = table[i,4]
+        add_country(; code, alpha2, alpha3, name)
+    end
+end
 
 """
-    add_alias(name, country::Country)
+    add_country(; code, alpha2="", alpha3="", name="")
 
-Adds `name` as a global alias for `country`, so that calling `Country(name)` returns `country`.
-
-Consider raising an issue to fix this permanently: https://github.com/cjdoris/Countries.jl.
+Add a country with the given `code` and optional `alpha2`, `alpha3` and `name` properties.
 """
-function add_alias(x::AbstractString, c::Country)
-    STRING_LOOKUP[x] = c.idx
-    STRING_LOOKUP[lowercase(x)] = c.idx
-    STRING_LOOKUP[uppercase(x)] = c.idx
-    SYMBOL_LOOKUP[Symbol(x)] = c.idx
-    SYMBOL_LOOKUP[Symbol(lowercase(x))] = c.idx
-    SYMBOL_LOOKUP[Symbol(uppercase(x))] = c.idx
+function add_country(; code, alpha2="", alpha3="", name="")
+    country = Country(code)
+    info = CountryInfo(; alpha2, alpha3, name)
+    # check we aren't overwriting anything
+    info2 = COUNTRY_INFO[code]
+    if !isempty(info2.name) || !isempty(info2.alpha2) || !isempty(info2.alpha3)
+        error("a country with code $code already exists: $country")
+    end
+    aliases = [k for k0 in [info.alpha2, info.alpha3, info.name] for k in [k0, lowercase(k0), uppercase(k0)] if !isempty(k)]
+    for k in aliases
+        if haskey(COUNTRY_LOOKUP, k)
+            c = COUNTRY_LOOKUP[k]
+            error("a country with name $(repr(k)) already exists: $c")
+        end
+    end
+    # save the info and aliases
+    COUNTRY_INFO[code] = info
+    for k in aliases
+        COUNTRY_LOOKUP[k] = country
+    end
     return
 end
 
-add_alias(x::Symbol, c::Country) =
-    add_alias(string(x), c)
-
 """
-    add_to_blacklist(name)
+    add_country_alias(name, country::Country)
 
-Adds `name` to the blacklist of aliases, so that `Country(name)` always raises an error.
-
-Consider raising an issue to fix this permanently: https://github.com/cjdoris/Countries.jl.
+Add an alias so that `Country(name)` returns `country`.
 """
-function add_to_blacklist(x::AbstractString)
-    STRING_LOOKUP[x] = -1
-    STRING_LOOKUP[lowercase(x)] = -1
-    STRING_LOOKUP[uppercase(x)] = -1
-    SYMBOL_LOOKUP[Symbol(x)] = -1
-    SYMBOL_LOOKUP[Symbol(lowercase(x))] = -1
-    SYMBOL_LOOKUP[Symbol(uppercase(x))] = -1
+function add_country_alias(name, country::Country)
+    name = convert(String, name)
+    aliases = [name, lowercase(name), uppercase(name)]
+    for k in aliases
+        if haskey(COUNTRY_LOOKUP, k)
+            c = COUNTRY_LOOKUP[k]
+            if c != country
+                error("a country with alias $(repr(k)) already exists: $(repr(c))")
+            end
+        end
+    end
+    for k in aliases
+        COUNTRY_LOOKUP[k] = country
+    end
     return
 end
 
-add_to_blacklist(x::Symbol) =
-    add_to_blacklist(string(x))
+add_default_countries()
 
-function Country(x::AbstractString)
-    isnull(x) && invalidcountry(x)
+function Base.getproperty(c::Country, k::Symbol)
+    if k == :code
+        return getfield(c, :code)
+    elseif k == :info
+        return COUNTRY_INFO[c.code]
+    else
+        return getproperty(c.info, k)
+    end
+end
 
-    # look up x
-    idx = get(STRING_LOOKUP, x, 0)
-    idx > 0 && @goto done
-    idx < 0 && invalidcountry(x)
+function Base.propertynames(::Country)
+    return (:code, :info, fieldnames(CountryInfo)...)
+end
 
-    # look up lowercase(x)
-    idx = get(STRING_LOOKUP, lowercase(x), 0)
-    idx > 0 && @goto keep
-    idx < 0 && invalidcountry(x)
+function Base.write(io::IO, c::Country)
+    return write(io, c.code)
+end
 
-    # short strings must match exactly (i.e. country codes)
-    length(x) ≤ 3 && invalidcountry(x)
+function Base.read(io::IO, ::Type{Country})
+    return Country(read(io, Int16))
+end
 
-    # now search for a match
-    idxs = Set{Int}()
-    for (y,idx) in pairs(ORIG_STRING_LOOKUP)
-        if idx > 0 && occursin(lowercase(x), lowercase(y))
-            push!(idxs, idx)
+function Base.print(io::IO, c::Country)
+    if !isempty(c.alpha3)
+        print(io, c.alpha3)
+    else
+        show(io, c)
+    end
+end
+
+function Base.show(io::IO, c::Country)
+    if get(io, :typeinfo, Any) == Country
+        if !isempty(c.alpha3)
+            print(io, c.alpha3)
+        elseif !isempty(c.alpha2)
+            print(io, c.alpha2)
+        else
+            print(io, c.code)
         end
-    end
-    if isempty(idxs)
-        invalidcountry(x)
-    elseif length(idxs) == 1
-        idx = first(idxs)
-        @warn "assuming $(repr(x)) is $(repr(Country(Val(:index), idx))); see `add_alias` or `add_to_blacklist`"
-        @goto keep
     else
-        invalidcountry(x, "maybe you meant one of $(sort(Country.(Val(:index), collect(idxs))))")
+        show(io, typeof(c))
+        print(io, "(")
+        if !isempty(c.alpha3)
+            show(io, c.alpha3)
+        elseif !isempty(c.alpha2)
+            show(io, c.alpha2)
+        else
+            show(io, c.code)
+        end
+        print(io, ")")
     end
-
-    @label keep
-    c = @inbounds Country(Val(:index), idx)
-    add_alias(x, c)
-    return c
-
-    @label done
-    return @inbounds Country(Val(:index), idx)
 end
 
-function Country(x::Symbol)
-    isnull(x) && invalidcountry(x)
-
-    idx = get(SYMBOL_LOOKUP, x, 0)
-    idx > 0 && return @inbounds Country(Val(:index), idx)
-    idx < 0 && invalidcountry(x)
-
-    return Country(string(x))
+function Base.show(io::IO, ::MIME"text/plain", c::Country)
+    name = isempty(c.name) ? "Invalid Country" : c.name
+    code = c.code
+    alpha2 = isempty(c.alpha2) ? "??" : c.alpha2
+    alpha3 = isempty(c.alpha3) ? "???" : c.alpha3
+    print(io, name, " (", alpha2, "/", alpha3, "/", code, ")")
 end
 
-Country(x::Integer) = country_from_lookup(ISO3166_NUMERIC_LOOKUP, x)
-
-global const ALL_COUNTRIES = Country[Country(x) for x in ISO3166_ALPHA2_LIST if !isnull(x)]
-
-Base.print(io::IO, x::Country) = print(io, cldr_name_en(x))
-
-Base.show(io::IO, x::Country) =
-    if get(io, :typeinfo, Union{}) == typeof(x)
-        print(io, iso3166_alpha3(x))
-    else
-        print(io, typeof(x), "(", repr(string(iso3166_alpha3(x))), ")")
-    end
-
-function Base.show(io::IO, ::MIME"text/plain", x::Country)
-    show(io, x)
-    print(io, ": ", official_name_en(x))
+function Base.:(==)(c1::Country, c2::Country)
+    c1.code == c2.code
 end
 
-Base.isless(x::Country, y::Country) = isless(iso3166_alpha3(x), iso3166_alpha3(y))
+function Base.hash(c::Country, h::UInt)
+    hash(c.code, hash(Country, h))
+end
+
+function Base.isequal(c1::Country, c2::Country)
+    isequal(c1.code, c2.code)
+end
+
+function Base.isless(c1::Country, c2::Country)
+    isless((c1.alpha3, c1.alpha2, c1.code), (c2.alpha3, c2.alpha2, c2.code))
+end
 
 end # module
