@@ -44,3 +44,12 @@ c.alpha2  # "GB"
 c.alpha3  # "GBR"
 c.name    # "United Kingdom of Great Britain and Northern Ireland"
 ```
+
+There are also corresponding functions, which can act on a country or anything identifying
+one:
+```julia
+Countries.code("GBR")    # 826
+Countries.alpha2("GBR")  # "GB"
+Countries.alpha3("GBR")  # "GBR"
+Countries.name("GBR")    # "United Kingdom of Great Britain and Northern Ireland"
+```

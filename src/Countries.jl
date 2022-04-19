@@ -1,3 +1,13 @@
+"""
+    module Countries
+
+Exports the type `Country` representing a country (according to ISO-3116).
+
+A `Country` has properties `code`, `alpha2`, `alpha3` and `name`. There are also functions
+of the same names.
+
+Other API functions are `add_country`, `add_alias`, `each_country`.
+"""
 module Countries
 
 using Artifacts: @artifact_str
@@ -78,21 +88,25 @@ function _check_name(x)
     return x
 end
 
-const DATA_ROOT = joinpath(artifact"countries-2.5.0", "world_countries-2.5.0")
+const DATA_DIR = joinpath(artifact"countries-2.5.0", "world_countries-2.5.0")
 
-const COUNTRY_INFO = [CountryInfo() for i in 1:999]
+const INFO = [CountryInfo() for i in 1:999]
 
-const COUNTRY_LOOKUP = Dict{String,Country}()
+const LOOKUP = Dict{String,Country}()
 
-Country(x::AbstractString) = get(COUNTRY_LOOKUP, x) do
+const AMBIG_LOG = Dict{String,Country}()
+
+const STRICT = Ref(false)
+
+Country(x::AbstractString) = get(LOOKUP, x) do
     u = uppercase(x)
-    get(COUNTRY_LOOKUP, x) do
+    get(LOOKUP, u) do
         msg1 = "$(repr(x)) is not the name of a known country"
         msg2 = "you may use Countries.add_country to add a new country or Countries.add_alias to add an alias for an existing country"
         if length(u) > 3
             cs = Set{Country}()
             ks = Set{String}()
-            for (k, c) in COUNTRY_LOOKUP
+            for (k, c) in LOOKUP
                 if occursin(u, k)
                     push!(ks, k)
                     push!(cs, c)
@@ -100,12 +114,13 @@ Country(x::AbstractString) = get(COUNTRY_LOOKUP, x) do
             end
             if isempty(cs)
                 error("$msg1; $msg2")
-            elseif length(cs) == 1
-                #@warn "$msg1, but unambiguously matches $(repr(first(ks))); $msg2"
-                return first(cs)
+            elseif length(cs) == 1 && !STRICT[]
+                c = only(cs)
+                AMBIG_LOG[x] = c
+                return c
             else
                 kk = join([repr(k) for k in ks], ", ", " or ")
-                error("$msg1 (perhaps you meant one of $kk?); $msg2")
+                error("$msg1 (perhaps you meant $kk?); $msg2")
             end
         else
             error("$msg1; $msg2")
@@ -113,8 +128,10 @@ Country(x::AbstractString) = get(COUNTRY_LOOKUP, x) do
     end
 end
 
+Country(x::Country) = x
+
 function add_default_countries()
-    table = readdlm(joinpath(DATA_ROOT, "data", "countries", "en", "world.csv"), ',', String)
+    table = readdlm(joinpath(DATA_DIR, "data", "countries", "en", "world.csv"), ',', String)
     @assert size(table, 2) == 4
     @assert table[1,:] == ["id", "alpha2", "alpha3", "name"]
     for i in 2:size(table, 1)
@@ -140,15 +157,15 @@ function add_country(; code, alpha2="", alpha3="", name="")
     end
     aliases = [k for k0 in [info.alpha2, info.alpha3, info.name] for k in [k0, lowercase(k0), uppercase(k0)] if !isempty(k)]
     for k in aliases
-        if haskey(COUNTRY_LOOKUP, k)
-            c = COUNTRY_LOOKUP[k]
+        if haskey(LOOKUP, k)
+            c = LOOKUP[k]
             error("a country with name $(repr(k)) already exists: $c")
         end
     end
     # save the info and aliases
-    COUNTRY_INFO[code] = info
+    INFO[code] = info
     for k in aliases
-        COUNTRY_LOOKUP[k] = country
+        LOOKUP[k] = country
     end
     return
 end
@@ -162,26 +179,24 @@ function add_alias(name, country::Country)
     name = convert(String, name)
     aliases = [name, lowercase(name), uppercase(name)]
     for k in aliases
-        if haskey(COUNTRY_LOOKUP, k)
-            c = COUNTRY_LOOKUP[k]
+        if haskey(LOOKUP, k)
+            c = LOOKUP[k]
             if c != country
                 error("a country with alias $(repr(k)) already exists: $(repr(c))")
             end
         end
     end
     for k in aliases
-        COUNTRY_LOOKUP[k] = country
+        LOOKUP[k] = country
     end
     return
 end
 
-add_default_countries()
-
 function Base.getproperty(c::Country, k::Symbol)
-    if k == :code
-        return getfield(c, :code)
+    if hasfield(Country, k)
+        return getfield(c, k)
     elseif k == :info
-        return COUNTRY_INFO[c.code]
+        return INFO[c.code]
     else
         return getproperty(c.info, k)
     end
@@ -258,16 +273,58 @@ function Base.isless(c1::Country, c2::Country)
     isless(c1.code, c2.code)
 end
 
-function isnull(c::Country)
+function isnull(c::CountryInfo)
     return isempty(c.name) && isempty(c.alpha2) && isempty(c.alpha3)
 end
 
-function _each_country()
-    return (Country(code) for code in 1:999)
+function isnull(c::Country)
+    return isnull(c.info)
 end
 
 function each_country()
-    return (c for c in _each_country() if !isnull(c))
+    return (Country(code) for (code, info) in enumerate(INFO) if !isnull(info))
 end
+
+"""
+    code(country)
+
+The numeric code of the given `country` (a `Country` or a numeric/string code identifying a
+country).
+"""
+function code(c)
+    return Country(c).code
+end
+
+"""
+    alpha2(country)
+
+The alpha2 code of the given `country` (a `Country` or a numeric/string code identifying a
+country).
+"""
+function alpha2(c)
+    return Country(c).alpha2
+end
+
+"""
+    alpha3(country)
+
+The alpha3 code of the given `country` (a `Country` or a numeric/string code identifying a
+country).
+"""
+function alpha3(c)
+    return Country(c).alpha3
+end
+
+"""
+    name(country)
+
+The name of the given `country` (a `Country` or a numeric/string code identifying a
+country).
+"""
+function name(c)
+    return Country(c).name
+end
+
+add_default_countries()
 
 end # module
