@@ -135,8 +135,7 @@ function add_country(; code, alpha2="", alpha3="", name="")
     country = Country(code)
     info = CountryInfo(; alpha2, alpha3, name)
     # check we aren't overwriting anything
-    info2 = COUNTRY_INFO[code]
-    if !isempty(info2.name) || !isempty(info2.alpha2) || !isempty(info2.alpha3)
+    if !isnull(country)
         error("a country with code $code already exists: $country")
     end
     aliases = [k for k0 in [info.alpha2, info.alpha3, info.name] for k in [k0, lowercase(k0), uppercase(k0)] if !isempty(k)]
@@ -232,11 +231,15 @@ function Base.show(io::IO, c::Country)
 end
 
 function Base.show(io::IO, ::MIME"text/plain", c::Country)
-    name = isempty(c.name) ? "Invalid Country" : c.name
-    code = c.code
-    alpha2 = isempty(c.alpha2) ? "??" : c.alpha2
-    alpha3 = isempty(c.alpha3) ? "???" : c.alpha3
-    print(io, name, " (", alpha2, "/", alpha3, "/", code, ")")
+    if get(io, :compact, false)
+        show(io, c)
+    else
+        name = isempty(c.name) ? "Invalid Country" : c.name
+        code = c.code
+        alpha2 = isempty(c.alpha2) ? "??" : c.alpha2
+        alpha3 = isempty(c.alpha3) ? "???" : c.alpha3
+        print(io, name, " (", alpha2, "/", alpha3, "/", code, ")")
+    end
 end
 
 function Base.:(==)(c1::Country, c2::Country)
@@ -252,7 +255,19 @@ function Base.isequal(c1::Country, c2::Country)
 end
 
 function Base.isless(c1::Country, c2::Country)
-    isless((c1.alpha3, c1.alpha2, c1.code), (c2.alpha3, c2.alpha2, c2.code))
+    isless(c1.code, c2.code)
+end
+
+function isnull(c::Country)
+    return isempty(c.name) && isempty(c.alpha2) && isempty(c.alpha3)
+end
+
+function _each_country()
+    return (Country(code) for code in 1:999)
+end
+
+function each_country()
+    return (c for c in _each_country() if !isnull(c))
 end
 
 end # module
