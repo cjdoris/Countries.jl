@@ -68,15 +68,13 @@ const NAME = ["" for _ in ALPHA2]
 
 const LOOKUP = Dict{String,Country}(zip(ALPHA2, COUNTRIES))
 const LOOKUP_NUM = Dict{Int16,Country}()
+const LOOKUP_CACHE = Dict{String,Country}()
 
 const AMBIG = Dict{String,Country}()
 
-const LOOKUP_ERRMSG1 = "is not a recognized country name"
-const LOOKUP_ERRMSG2 =
-
 _lookup_error(x, extra="") = error("$(repr(x)) is not a recognized country name$extra; you can use new_country to define a new country or alias_country to define an alias for an existing country")
 
-Country(x::AbstractString) = get(LOOKUP, x) do
+Country(x::AbstractString) = get!(LOOKUP_CACHE, x) do
     u = uppercase(x)
     get(LOOKUP, u) do
         if length(u) > 3
@@ -295,6 +293,7 @@ function new_country(; alpha2, alpha3="", numeric=0, name="")
     alpha3 = _check_alpha3(alpha3)
     numeric = _check_numeric(numeric)
     name = convert(String, name)
+    uname = uppercase(name)
     country = Country(alpha2)
     idx = country.idx
     # check none of the info clashes
@@ -304,7 +303,7 @@ function new_country(; alpha2, alpha3="", numeric=0, name="")
     if haskey(LOOKUP, alpha3)
         error("alpha3=$(repr(alpha3)) already used by country=$(Country(alpha3))")
     end
-    if haskey(LOOKUP, uppercase(name))
+    if haskey(LOOKUP, uname)
         error("name=$(repr(name)) already used by country=$(Country(name))")
     end
     if haskey(LOOKUP_NUM, numeric)
@@ -316,12 +315,15 @@ function new_country(; alpha2, alpha3="", numeric=0, name="")
     NUMERIC[idx] = numeric
     NAME[idx] = name
     # lookup
-    for k in [k for k0 in [alpha3, name] for k in [uppercase(k0), lowercase(k0), k0] if !isempty(k)]
-        LOOKUP[k] = country
+    for k in [alpha3, uname]
+        if !isempty(k)
+            LOOKUP[k] = country
+        end
     end
     if numeric > 0
         LOOKUP_NUM[numeric] = country
     end
+    empty!(LOOKUP_CACHE)
     return
 end
 
@@ -340,16 +342,19 @@ GB: United Kingdom of Great Britain and Northern Ireland
 """
 function alias_country(name, country)
     name = convert(String, name)
+    uname = uppercase(name)
     country = Country(country)
     if length(name) < 4
         error("alias=$(repr(name)) too short, must have length at least 4")
     end
-    if haskey(LOOKUP, uppercase(name)) && Country(name) != country
-        error("alias=$(repr(name)) already used by country=$(Country(name))")
+    if haskey(LOOKUP, uname)
+        if LOOKUP[uname] != country
+            error("alias=$(repr(name)) already used by country=$(Country(name))")
+        end
+        return
     end
-    LOOKUP[name] = country
-    LOOKUP[lowercase(name)] = country
-    LOOKUP[uppercase(name)] = country
+    LOOKUP[uname] = country
+    empty!(LOOKUP_CACHE)
     return
 end
 
