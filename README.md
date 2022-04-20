@@ -1,7 +1,9 @@
 # Countries.jl
 
-[![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliahub.com/docs/Countries/)
-[![codecov](https://codecov.io/gh/cjdoris/Countries.jl/branch/master/graph/badge.svg)](https://codecov.io/gh/cjdoris/Countries.jl)
+[![Project Status: Active – The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
+[![Stable Documentation](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliahub.com/docs/Countries/)
+[![Test Status](https://github.com/cjdoris/Countries.jl/workflows/Tests/badge.svg)](https://github.com/cjdoris/Countries.jl/actions?query=workflow%3ATests)
+[![codecov](https://codecov.io/gh/cjdoris/Countries.jl/branch/main/graph/badge.svg?token=AECCWGKRVJ)](https://codecov.io/gh/cjdoris/Countries.jl)
 
 Julia package for handling the countries on Earth.
 
