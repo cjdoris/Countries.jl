@@ -18,7 +18,9 @@ pkg> add https://github.com/cjdoris/Countries.jl.git
 
 ## Documentation
 
-    Country(id)
+```julia
+Country(id)
+```
 
 A country with the given `id`.
 
@@ -45,7 +47,9 @@ Country("england")
 
 ---
 
-    country_numeric(country)
+```julia
+country_numeric(country)
+```
 
 The numeric code of the given country.
 
@@ -57,7 +61,9 @@ julia> country_numeric("GBR")
 
 ---
 
-    country_alpha2(country)
+```julia
+country_alpha2(country)
+```
 
 The alpha2 code of the given country.
 
@@ -69,7 +75,9 @@ julia> country_alpha2("GBR")
 
 ---
 
-    country_alpha3(country)
+```julia
+country_alpha3(country)
+```
 
 The alpha3 code of the given country.
 
@@ -81,7 +89,9 @@ julia> country_alpha3("United Kingdom")
 
 ---
 
-    country_name(country)
+```julia
+country_name(country)
+```
 
 The name of the given country.
 
@@ -93,7 +103,9 @@ julia> country_name("GB")
 
 ---
 
-    country_assigned(country)
+```julia
+country_assigned(country)
+```
 
 True if the given country is assigned.
 
@@ -107,7 +119,9 @@ false
 
 ---
 
-    new_country(; alpha2, alpha3="", numeric=0, name="")
+```julia
+new_country(; alpha2, alpha3="", numeric=0, name="")
+```
 
 Register a new country with the given data.
 
@@ -121,7 +135,9 @@ ZZ: Zedland
 
 ---
 
-    alias_country(alias, country)
+```julia
+alias_country(alias, country)
+```
 
 Register an alias for the given country so that `Country(alias)` returns `country`.
 
@@ -135,7 +151,9 @@ GB: United Kingdom of Great Britain and Northern Ireland
 
 ---
 
-    each_country()
+```julia
+each_country()
+```
 
 Iterator over each assigned country.
 
