@@ -5,6 +5,9 @@
 
 Julia package for handling the countries on Earth.
 
+Includes functions to convert between different representations of countries, such as
+ISO-3166 codes (alpha2, alpha3 and numeric), country names, and the new `Country` type.
+
 All 249 countries/territories/etc. in ISO-3166 are defined by default. It is possible to add
 more user-defined countries or add aliases for existing countries.
 
@@ -12,6 +15,42 @@ more user-defined countries or add aliases for existing countries.
 
 ```
 pkg> add https://github.com/cjdoris/Countries.jl.git
+```
+
+## Example
+
+```julia-repl
+julia> using Countries
+
+julia> country_alpha2.(["united kingdom", "france", "germany"])
+3-element Vector{String}:
+ "GB"
+ "FR"
+ "DE"
+
+julia> country_alpha3.(["united kingdom", "france", "germany"])
+3-element Vector{String}:
+ "GBR"
+ "FRA"
+ "DEU"
+
+julia> country_numeric.(["united kingdom", "france", "germany"])
+3-element Vector{Int16}:
+ 826
+ 250
+ 276
+
+julia> country_name.(["united kingdom", "france", "germany"])
+3-element Vector{String}:
+ "United Kingdom of Great Britain and Northern Ireland"
+ "France"
+ "Germany"
+
+julia> Country.(["united kingdom", "france", "germany"])
+3-element Vector{Country}:
+ GB: United Kingdom of Great Britain and Northern Ireland
+ FR: France
+ DE: Germany
 ```
 
 ## Documentation
