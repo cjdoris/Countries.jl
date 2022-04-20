@@ -1,7 +1,7 @@
 name = "Countries"
 uuid = "5bf49175-83fb-4b6d-82b5-d6ded85154ae"
 authors = ["Christopher Doris <github.com/cjdoris>"]
-version = "0.1.0"
+version = "0.2.0"
 
 [deps]
 Artifacts = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
