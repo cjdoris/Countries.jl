@@ -1,27 +1,36 @@
 """
     module Countries
 
-Exports the type `Country` representing a country (according to ISO-3116).
+Tools for handling countries (according to ISO-3116).
 
-A `Country` has properties `code`, `alpha2`, `alpha3` and `name`. There are also functions
-of the same names.
-
-Other API functions are `add_country`, `add_alias`, `each_country`.
+The API consists of:
+- `Country`
+- `country_numeric`
+- `country_alpha2`
+- `country_alpha3`
+- `country_name`
+- `country_assigned`
+- `new_country`
+- `alias_country`
+- `each_country`
 """
 module Countries
 
 using Artifacts: @artifact_str
 using DelimitedFiles: readdlm
 
-export Country
+export Country, country_numeric, country_alpha2, country_alpha3, country_name, country_assigned, new_country, alias_country, each_country
 
 """
     Country(id)
 
 A country with the given `id`.
 
+It is canonically represented by its alpha2 code, such as "GB". Two countries with
+the same code are identically equal.
+
 The following are all ways to construct the UK:
-```
+```julia
 # ISO-3166 codes
 Country(826)
 Country("GBR")
@@ -29,48 +38,197 @@ Country("gbr")
 Country("GB")
 
 # by name (or unambiguous partial name)
-Country("United Kingdom of Great Britain and Nortern Ireland")
+Country("United Kingdom of Great Britain and Northern Ireland")
 Country("United Kingdom")
 Country("Britain")
 
 # by alias
-Countries.add_alias("UK", Country(826))
-Country("uk")
-```
-
-We can retrieve information about a country by property access:
-```
-c = Country("GBR")
-c.code    # 826
-c.alpha2  # "GB"
-c.alpha3  # "GBR"
-c.name    # "United Kingdom of Great Britain and Northern Ireland"
+Countries.alias_country("England", "GB")
+Country("england")
 ```
 """
 struct Country
-    code::Int16
-    Country(code::Integer) = new(_check_code(code))
+    idx::Int16
+    Country(::Val{:new}, idx::Int16) = new(idx)
 end
 
-struct CountryInfo
-    alpha2::String
-    alpha3::String
-    name::String
-    CountryInfo(; alpha2="", alpha3="", name="") = new(_check_alpha2(alpha2), _check_alpha3(alpha3), _check_name(name))
+const DATA_DIR = joinpath(artifact"countries-2.5.0", "world_countries-2.5.0")
+
+const STRICT = Ref(false)
+
+const ALPHA2 = [string(c1, c2) for c1 in 'A':'Z' for c2 in 'A':'Z']
+const COUNTRIES = [Country(Val(:new), Int16(i)) for (i,_) in enumerate(ALPHA2)]
+const ASSIGNED = [false for _ in ALPHA2]
+const ALPHA3 = ["" for _ in ALPHA2]
+const NUMERIC = [Int16(0) for _ in ALPHA2]
+const NAME = ["" for _ in ALPHA2]
+
+const LOOKUP = Dict{String,Country}(zip(ALPHA2, COUNTRIES))
+const LOOKUP_NUM = Dict{Int16,Country}()
+
+const AMBIG = Dict{String,Country}()
+
+Country(x::AbstractString) = get(LOOKUP, x) do
+    u = uppercase(x)
+    msg1 = "is not a recognized country name"
+    msg2 = "you can use new_country to define a new country or alias_country to define an alias for an existing country"
+    get(LOOKUP, u) do
+        if length(u) > 3
+            ks = Set{String}()
+            cs = Set{Country}()
+            for (k, c) in LOOKUP
+                if occursin(u, k)
+                    push!(ks, k)
+                    push!(cs, c)
+                end
+            end
+            if length(cs) == 1 && !STRICT[]
+                c = only(cs)
+                AMBIG[x] = c
+                return c
+            elseif isempty(ks)
+                error("$(repr(x)) $msg1; $msg2")
+            else
+                kk = join([repr(k) for k in ks], ", ", " or ")
+                error("$(repr(x)) $msg1 (perhaps you meant $kk); $msg2")
+            end
+        else
+            error("$(repr(x)) $msg1; $msg2")
+        end
+    end
 end
 
-function _check_code(x)
+Country(x::Integer) = get(LOOKUP_NUM, x) do
+    error("$x is not a recognized country code")
+end
+
+Country(x::Country) = x
+
+"""
+    country_numeric(country)
+
+The numeric code of the given country.
+
+Example:
+```julia-repl
+julia> country_numeric("GBR")
+826
+```
+"""
+country_numeric(c) = @inbounds NUMERIC[Country(c).idx]
+
+"""
+    country_alpha2(country)
+
+The alpha2 code of the given country.
+
+Example:
+```julia-repl
+julia> country_alpha2("GBR")
+"GB"
+```
+"""
+country_alpha2(c) = @inbounds ALPHA2[Country(c).idx]
+
+"""
+    country_alpha3(country)
+
+The alpha3 code of the given country.
+
+Example:
+```julia-repl
+julia> country_alpha3("United Kingdom")
+"GBR"
+```
+"""
+country_alpha3(c) = @inbounds ALPHA3[Country(c).idx]
+
+"""
+    country_name(country)
+
+The name of the given country.
+
+Example:
+```julia-repl
+julia> country_name("GB")
+"United Kingdom of Great Britain and Northern Ireland"
+```
+"""
+country_name(c) = @inbounds NAME[Country(c).idx]
+
+"""
+    country_assigned(country)
+
+True if the given country is assigned.
+
+Example:
+```julia-repl
+julia> country_assigned("GB")
+true
+
+julia> country_assigned("ZZ")
+false
+```
+"""
+country_assigned(c) = @inbounds ASSIGNED[Country(c).idx]
+
+function Base.print(io::IO, c::Country)
+    print(io, country_alpha2(c))
+end
+
+function Base.show(io::IO, c::Country)
+    if get(io, :typeinfo, Any) == Country
+        print(io, country_alpha2(c))
+    else
+        show(io, Country)
+        print(io, "(")
+        show(io, country_alpha2(c))
+        print(io, ")")
+    end
+end
+
+function Base.show(io::IO, ::MIME"text/plain", c::Country)
+    if get(io, :compact, false)
+        show(io, c)
+    else
+        print(io, country_alpha2(c), ": ", country_assigned(c) ? country_name(c) : "(Unassigned Country)")
+    end
+end
+
+function Base.write(io::IO, c::Country)
+    return write(io, c.idx)
+end
+
+function Base.read(io::IO, ::Type{Country})
+    return Country(Val(:new), read(io, Int16))
+end
+
+function Base.:(==)(c1::Country, c2::Country)
+    c1.idx == c2.idx
+end
+
+function Base.hash(c::Country, h::UInt)
+    hash(c.idx, hash(Country, h))
+end
+
+function Base.isequal(c1::Country, c2::Country)
+    isequal(c1.idx, c2.idx)
+end
+
+function Base.isless(c1::Country, c2::Country)
+    isless(c1.idx, c2.idx)
+end
+
+function _check_numeric(x)
     x = convert(Int16, x)
-    1 ≤ x ≤ 999 || error("code must be between 1 and 999")
+    0 ≤ x ≤ 999 || error("numeric must be between 0 and 999")
     return x
 end
 
 function _check_alpha2(x)
     x = uppercase(convert(String, x))
-    if !isempty(x)
-        length(x) == 2 || error("alpha2 must be empty or length 2")
-        all('A' ≤ c ≤ 'Z' for c in x) || error("alpha2 must consist only of letters")
-    end
+    length(x) == 2 || error("alpha2 must be length 2")
+    all('A' ≤ c ≤ 'Z' for c in x) || error("alpha2 must consist only of letters")
     return x
 end
 
@@ -88,241 +246,115 @@ function _check_name(x)
     return x
 end
 
-const DATA_DIR = joinpath(artifact"countries-2.5.0", "world_countries-2.5.0")
+"""
+    new_country(; alpha2, alpha3="", numeric=0, name="")
 
-const INFO = [CountryInfo() for i in 1:999]
+Register a new country with the given data.
 
-const LOOKUP = Dict{String,Country}()
+Example:
+```julia-repl
+julia> new_country(alpha2="ZZ", alpha3="ZZZ", numeric=999, name="Zedland")
 
-const AMBIG_LOG = Dict{String,Country}()
-
-const STRICT = Ref(false)
-
-Country(x::AbstractString) = get(LOOKUP, x) do
-    u = uppercase(x)
-    get(LOOKUP, u) do
-        msg1 = "$(repr(x)) is not the name of a known country"
-        msg2 = "you may use Countries.add_country to add a new country or Countries.add_alias to add an alias for an existing country"
-        if length(u) > 3
-            cs = Set{Country}()
-            ks = Set{String}()
-            for (k, c) in LOOKUP
-                if occursin(u, k)
-                    push!(ks, k)
-                    push!(cs, c)
-                end
-            end
-            if isempty(cs)
-                error("$msg1; $msg2")
-            elseif length(cs) == 1 && !STRICT[]
-                c = only(cs)
-                AMBIG_LOG[x] = c
-                return c
-            else
-                kk = join([repr(k) for k in ks], ", ", " or ")
-                error("$msg1 (perhaps you meant $kk?); $msg2")
-            end
-        else
-            error("$msg1; $msg2")
-        end
+julia> Country("zzz")
+ZZ: Zedland
+```
+"""
+function new_country(; alpha2, alpha3="", numeric=0, name="")
+    alpha2 = _check_alpha2(alpha2)
+    alpha3 = _check_alpha3(alpha3)
+    numeric = _check_numeric(numeric)
+    name = _check_name(name)
+    country = Country(alpha2)
+    idx = country.idx
+    # check none of the info clashes
+    if ASSIGNED[idx]
+        error("country=$(repr(country)) already assigned")
     end
+    if haskey(LOOKUP, alpha3)
+        error("alpha3=$(repr(alpha3)) already used by country=$(Country(alpha3))")
+    end
+    if haskey(LOOKUP, uppercase(name))
+        error("name=$(repr(name)) already used by country=$(Country(name))")
+    end
+    if haskey(LOOKUP_NUM, numeric)
+        error("numeric=$numeric already used by country=$(Country(numeric))")
+    end
+    # assign
+    ASSIGNED[idx] = true
+    ALPHA3[idx] = alpha3
+    NUMERIC[idx] = numeric
+    NAME[idx] = name
+    # lookup
+    for k in [k for k0 in [alpha3, name] for k in [uppercase(k0), lowercase(k0), k0] if !isempty(k)]
+        LOOKUP[k] = country
+    end
+    if numeric > 0
+        LOOKUP_NUM[numeric] = country
+    end
+    return
 end
 
-Country(x::Country) = x
+"""
+    alias_country(alias, country)
+
+Register an alias for the given country so that `Country(alias)` returns `country`.
+
+Example:
+```julia-repl
+julia> alias_country("England", "GBR")
+
+julia> Country("england")
+GB: United Kingdom of Great Britain and Northern Ireland
+```
+"""
+function alias_country(name, country)
+    name = convert(String, name)
+    country = Country(country)
+    if length(name) < 4
+        error("alias=$(repr(name)) too short, must have length at least 4")
+    end
+    if haskey(LOOKUP, uppercase(name)) && Country(name) != country
+        error("alias=$(repr(name)) already used by country=$(Country(name))")
+    end
+    LOOKUP[name] = country
+    LOOKUP[lowercase(name)] = country
+    LOOKUP[uppercase(name)] = country
+    return
+end
+
+"""
+    each_country()
+
+Iterator over each assigned country.
+
+Example:
+```julia-repl
+julia> collect(each_country())
+250-element Vector{Country}:
+ AD: Andorra
+ AE: United Arab Emirates
+ ⋮
+ ZM: Zambia
+ ZW: Zimbabwe
+```
+"""
+function each_country()
+    return (c for c in COUNTRIES if country_assigned(c))
+end
+
+### populate default countries at precompile-time
 
 function add_default_countries()
     table = readdlm(joinpath(DATA_DIR, "data", "countries", "en", "world.csv"), ',', String)
     @assert size(table, 2) == 4
     @assert table[1,:] == ["id", "alpha2", "alpha3", "name"]
     for i in 2:size(table, 1)
-        code = parse(Int16, table[i,1])
+        numeric = parse(Int16, table[i,1])
         alpha2 = table[i,2]
         alpha3 = table[i,3]
         name = table[i,4]
-        add_country(; code, alpha2, alpha3, name)
+        new_country(; numeric, alpha2, alpha3, name)
     end
-end
-
-"""
-    add_country(; code, alpha2="", alpha3="", name="")
-
-Add a country with the given `code` and optional `alpha2`, `alpha3` and `name` properties.
-"""
-function add_country(; code, alpha2="", alpha3="", name="")
-    country = Country(code)
-    info = CountryInfo(; alpha2, alpha3, name)
-    # check we aren't overwriting anything
-    if !isnull(country)
-        error("a country with code $code already exists: $country")
-    end
-    aliases = [k for k0 in [info.alpha2, info.alpha3, info.name] for k in [k0, lowercase(k0), uppercase(k0)] if !isempty(k)]
-    for k in aliases
-        if haskey(LOOKUP, k)
-            c = LOOKUP[k]
-            error("a country with name $(repr(k)) already exists: $c")
-        end
-    end
-    # save the info and aliases
-    INFO[code] = info
-    for k in aliases
-        LOOKUP[k] = country
-    end
-    return
-end
-
-"""
-    add_alias(name, country::Country)
-
-Add an alias so that `Country(name)` returns `country`.
-"""
-function add_alias(name, country::Country)
-    name = convert(String, name)
-    aliases = [name, lowercase(name), uppercase(name)]
-    for k in aliases
-        if haskey(LOOKUP, k)
-            c = LOOKUP[k]
-            if c != country
-                error("a country with alias $(repr(k)) already exists: $(repr(c))")
-            end
-        end
-    end
-    for k in aliases
-        LOOKUP[k] = country
-    end
-    return
-end
-
-function Base.getproperty(c::Country, k::Symbol)
-    if hasfield(Country, k)
-        return getfield(c, k)
-    elseif k == :info
-        return INFO[c.code]
-    else
-        return getproperty(c.info, k)
-    end
-end
-
-function Base.propertynames(::Country)
-    return (:code, :info, fieldnames(CountryInfo)...)
-end
-
-function Base.write(io::IO, c::Country)
-    return write(io, c.code)
-end
-
-function Base.read(io::IO, ::Type{Country})
-    return Country(read(io, Int16))
-end
-
-function Base.print(io::IO, c::Country)
-    if !isempty(c.alpha3)
-        print(io, c.alpha3)
-    else
-        show(io, c)
-    end
-end
-
-function Base.show(io::IO, c::Country)
-    if get(io, :typeinfo, Any) == Country
-        if !isempty(c.alpha3)
-            print(io, c.alpha3)
-        elseif !isempty(c.alpha2)
-            print(io, c.alpha2)
-        else
-            print(io, c.code)
-        end
-    else
-        show(io, typeof(c))
-        print(io, "(")
-        if !isempty(c.alpha3)
-            show(io, c.alpha3)
-        elseif !isempty(c.alpha2)
-            show(io, c.alpha2)
-        else
-            show(io, c.code)
-        end
-        print(io, ")")
-    end
-end
-
-function Base.show(io::IO, ::MIME"text/plain", c::Country)
-    if get(io, :compact, false)
-        show(io, c)
-    else
-        name = isempty(c.name) ? "Invalid Country" : c.name
-        code = c.code
-        alpha2 = isempty(c.alpha2) ? "??" : c.alpha2
-        alpha3 = isempty(c.alpha3) ? "???" : c.alpha3
-        print(io, name, " (", alpha2, "/", alpha3, "/", code, ")")
-    end
-end
-
-function Base.:(==)(c1::Country, c2::Country)
-    c1.code == c2.code
-end
-
-function Base.hash(c::Country, h::UInt)
-    hash(c.code, hash(Country, h))
-end
-
-function Base.isequal(c1::Country, c2::Country)
-    isequal(c1.code, c2.code)
-end
-
-function Base.isless(c1::Country, c2::Country)
-    isless(c1.code, c2.code)
-end
-
-function isnull(c::CountryInfo)
-    return isempty(c.name) && isempty(c.alpha2) && isempty(c.alpha3)
-end
-
-function isnull(c::Country)
-    return isnull(c.info)
-end
-
-function each_country()
-    return (Country(code) for (code, info) in enumerate(INFO) if !isnull(info))
-end
-
-"""
-    code(country)
-
-The numeric code of the given `country` (a `Country` or a numeric/string code identifying a
-country).
-"""
-function code(c)
-    return Country(c).code
-end
-
-"""
-    alpha2(country)
-
-The alpha2 code of the given `country` (a `Country` or a numeric/string code identifying a
-country).
-"""
-function alpha2(c)
-    return Country(c).alpha2
-end
-
-"""
-    alpha3(country)
-
-The alpha3 code of the given `country` (a `Country` or a numeric/string code identifying a
-country).
-"""
-function alpha3(c)
-    return Country(c).alpha3
-end
-
-"""
-    name(country)
-
-The name of the given `country` (a `Country` or a numeric/string code identifying a
-country).
-"""
-function name(c)
-    return Country(c).name
 end
 
 add_default_countries()

@@ -18,7 +18,14 @@ pkg> add https://github.com/cjdoris/Countries.jl.git
 
 ## Documentation
 
-This module exports one type, `Country`. The following are all ways to construct the UK:
+    Country(id)
+
+A country with the given `id`.
+
+It is canonically represented by its alpha2 code, such as "GB". Two countries with
+the same code are identically equal.
+
+The following are all ways to construct the UK:
 ```julia
 # ISO-3166 codes
 Country(826)
@@ -27,29 +34,118 @@ Country("gbr")
 Country("GB")
 
 # by name (or unambiguous partial name)
-Country("United Kingdom of Great Britain and Nortern Ireland")
+Country("United Kingdom of Great Britain and Northern Ireland")
 Country("United Kingdom")
 Country("Britain")
 
 # by alias
-Countries.add_alias("UK", Country(826))
-Country("uk")
+Countries.alias_country("England", "GB")
+Country("england")
 ```
 
-We can retrieve information about a country by property access:
-```julia
-c = Country("GBR")
-c.code    # 826
-c.alpha2  # "GB"
-c.alpha3  # "GBR"
-c.name    # "United Kingdom of Great Britain and Northern Ireland"
+---
+
+    country_numeric(country)
+
+The numeric code of the given country.
+
+Example:
+```julia-repl
+julia> country_numeric("GBR")
+826
 ```
 
-There are also corresponding functions, which can act on a country or anything identifying
-one:
-```julia
-Countries.code("GBR")    # 826
-Countries.alpha2("GBR")  # "GB"
-Countries.alpha3("GBR")  # "GBR"
-Countries.name("GBR")    # "United Kingdom of Great Britain and Northern Ireland"
+---
+
+    country_alpha2(country)
+
+The alpha2 code of the given country.
+
+Example:
+```julia-repl
+julia> country_alpha2("GBR")
+"GB"
+```
+
+---
+
+    country_alpha3(country)
+
+The alpha3 code of the given country.
+
+Example:
+```julia-repl
+julia> country_alpha3("United Kingdom")
+"GBR"
+```
+
+---
+
+    country_name(country)
+
+The name of the given country.
+
+Example:
+```julia-repl
+julia> country_name("GB")
+"United Kingdom of Great Britain and Northern Ireland"
+```
+
+---
+
+    country_assigned(country)
+
+True if the given country is assigned.
+
+Example:
+```julia-repl
+julia> country_assigned("GB")
+true
+
+julia> country_assigned("ZZ")
+false
+
+---
+
+    new_country(; alpha2, alpha3="", numeric=0, name="")
+
+Register a new country with the given data.
+
+Example:
+```julia-repl
+julia> new_country(alpha2="ZZ", alpha3="ZZZ", numeric=999, name="Zedland")
+
+julia> Country("zzz")
+ZZ: Zedland
+```
+
+---
+
+    alias_country(alias, country)
+
+Register an alias for the given country so that `Country(alias)` returns `country`.
+
+Example:
+```julia-repl
+julia> alias_country("England", "GBR")
+
+julia> Country("england")
+GB: United Kingdom of Great Britain and Northern Ireland
+```
+
+---
+
+    each_country()
+
+Iterator over each assigned country.
+
+Example:
+```julia-repl
+julia> collect(each_country())
+250-element Vector{Country}:
+ AD: Andorra
+ AE: United Arab Emirates
+ ⋮
+ ZM: Zambia
+ ZW: Zimbabwe
 ```
