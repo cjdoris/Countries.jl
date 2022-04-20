@@ -4,7 +4,6 @@ authors = ["Christopher Doris <github.com/cjdoris>"]
 version = "0.2.0"
 
 [deps]
-Artifacts = "56f22d72-fd6d-98f1-02f0-08ddc0907c33"
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
 
 [compat]
