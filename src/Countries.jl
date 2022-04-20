@@ -391,5 +391,6 @@ for country in ["GB", "gb", "Gb", "FOO", "foo", "Foo", "FOOO", "fooo", "Fooo"]
     end
 end
 collect(each_country())
+empty!(AMBIG)
 
 end # module
