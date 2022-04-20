@@ -74,7 +74,7 @@ Country(x::AbstractString) = get(LOOKUP, x) do
     msg2 = "you can use new_country to define a new country or alias_country to define an alias for an existing country"
     get(LOOKUP, u) do
         if length(u) > 3
-            ks = Set{String}()
+            ks = String[]
             cs = Set{Country}()
             for (k, c) in LOOKUP
                 if occursin(u, k)
@@ -89,6 +89,7 @@ Country(x::AbstractString) = get(LOOKUP, x) do
             elseif isempty(ks)
                 error("$(repr(x)) $msg1; $msg2")
             else
+                sort!(ks, by=Country)
                 kk = join([repr(k) for k in ks], ", ", " or ")
                 error("$(repr(x)) $msg1 (perhaps you meant $kk); $msg2")
             end
