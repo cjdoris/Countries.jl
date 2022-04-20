@@ -41,7 +41,7 @@ Country("United Kingdom")
 Country("Britain")
 
 # by alias
-Countries.alias_country("England", "GB")
+alias_country("England", "GB")
 Country("england")
 ```
 
