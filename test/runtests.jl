@@ -137,6 +137,18 @@ using Test, Countries
         @test country_name("ZL") == "Zedland"
         @test country_numeric("ZLD") == 900
 
+        @test_throws Exception new_country(alpha2="ZL", alpha3="ZLD", name="Zedland2", numeric=900)
+        @test country_name("ZL") == "Zedland"
+
+        @test_throws Exception new_country(alpha2="ZZ", alpha3="ZLD", name="Zedland2", numeric=999)
+        @test country_assigned("ZZ") == false
+
+        @test_throws Exception new_country(alpha2="ZZ", alpha3="ZZZ", name="Zedland", numeric=999)
+        @test country_assigned("ZZ") == false
+
+        @test_throws Exception new_country(alpha2="ZZ", alpha3="ZZZ", name="ZedZedZedland", numeric=900)
+        @test country_assigned("ZZ") == false
+
     end
 
     @testset "alias_country" begin
@@ -144,6 +156,18 @@ using Test, Countries
         @test_throws Exception country_alpha2("my alias")
         alias_country("My Alias", "GBR")
         @test country_alpha2("my alias") === "GB"
+
+        @test_throws Exception alias_country("My Alias", "FRA")
+        @test country_alpha2("my alias") == "GB"
+
+        alias_country("My Alias", "GBR")
+        @test country_alpha2("my alias") === "GB"
+
+        @test_throws Exception alias_country("", "GBR")
+        @test_throws Exception alias_country("Z", "GBR")
+        @test_throws Exception alias_country("ZZ", "GBR")
+        @test_throws Exception alias_country("ZZZ", "GBR")
+        @test_throws Exception alias_country("France", "GBR")
 
     end
 
