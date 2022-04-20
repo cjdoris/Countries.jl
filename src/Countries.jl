@@ -358,7 +358,7 @@ end
 
 ### populate default countries at precompile-time
 
-function add_default_countries()
+let
     table = readdlm(DATA_PATH, ',', String)
     nrows, ncols = size(table)
     @assert nrows == 250
@@ -370,9 +370,6 @@ function add_default_countries()
         new_country(; numeric, alpha2, alpha3, name)
     end
 end
-
-add_default_countries()
-
 
 ### precompile
 
