@@ -1,7 +1,7 @@
 name = "Countries"
 uuid = "5bf49175-83fb-4b6d-82b5-d6ded85154ae"
 authors = ["Christopher Doris <github.com/cjdoris>"]
-version = "0.2.0"
+version = "0.2.1"
 
 [deps]
 DelimitedFiles = "8bb1440f-4735-579b-a4ab-409b98df4dab"
