@@ -71,10 +71,13 @@ const LOOKUP_NUM = Dict{Int16,Country}()
 
 const AMBIG = Dict{String,Country}()
 
+const LOOKUP_ERRMSG1 = "is not a recognized country name"
+const LOOKUP_ERRMSG2 =
+
+_lookup_error(x, extra="") = error("$(repr(x)) is not a recognized country name$extra; you can use new_country to define a new country or alias_country to define an alias for an existing country")
+
 Country(x::AbstractString) = get(LOOKUP, x) do
     u = uppercase(x)
-    msg1 = "is not a recognized country name"
-    msg2 = "you can use new_country to define a new country or alias_country to define an alias for an existing country"
     get(LOOKUP, u) do
         if length(u) > 3
             ks = String[]
@@ -90,14 +93,14 @@ Country(x::AbstractString) = get(LOOKUP, x) do
                 AMBIG[x] = c
                 return c
             elseif isempty(ks)
-                error("$(repr(x)) $msg1; $msg2")
+                _lookup_error(x)
             else
                 sort!(ks, by=Country)
                 kk = join([repr(k) for k in ks], ", ", " or ")
-                error("$(repr(x)) $msg1 (perhaps you meant $kk); $msg2")
+                _lookup_error(x, " (perhaps you meant $kk)")
             end
         else
-            error("$(repr(x)) $msg1; $msg2")
+            _lookup_error(x)
         end
     end
 end
@@ -274,11 +277,6 @@ function _check_alpha3(x)
     return x
 end
 
-function _check_name(x)
-    x = convert(String, x)
-    return x
-end
-
 """
     new_country(; alpha2, alpha3="", numeric=0, name="")
 
@@ -296,7 +294,7 @@ function new_country(; alpha2, alpha3="", numeric=0, name="")
     alpha2 = _check_alpha2(alpha2)
     alpha3 = _check_alpha3(alpha3)
     numeric = _check_numeric(numeric)
-    name = _check_name(name)
+    name = convert(String, name)
     country = Country(alpha2)
     idx = country.idx
     # check none of the info clashes
