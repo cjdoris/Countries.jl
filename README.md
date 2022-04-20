@@ -5,9 +5,7 @@
 
 Julia package for handling the countries on Earth.
 
-It is based on the data here: https://github.com/stefangabos/world_countries.
-
-All countries/territories/etc. in ISO-3166 are defined by default. It is possible to add
+All 249 countries/territories/etc. in ISO-3166 are defined by default. It is possible to add
 more user-defined countries or add aliases for existing countries.
 
 ## Install
@@ -168,3 +166,9 @@ julia> collect(each_country())
  ZM: Zambia
  ZW: Zimbabwe
 ```
+
+## Attribution
+
+This site or product includes IP2Location™ Country Information which is available from https://www.ip2location.com.
+
+(Specifically it was downloaded from https://www.ip2location.com/free/country-information. Last updated 14 March 2022.)

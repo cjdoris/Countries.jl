@@ -16,7 +16,6 @@ The API consists of:
 """
 module Countries
 
-using Artifacts: @artifact_str
 using DelimitedFiles: readdlm
 
 export Country, country_numeric, country_alpha2, country_alpha3, country_name, country_assigned, new_country, alias_country, each_country
@@ -55,7 +54,8 @@ struct Country
     Country(::Val{:new}, idx::Int16) = new(idx)
 end
 
-const DATA_DIR = joinpath(artifact"countries-2.5.0", "world_countries-2.5.0")
+const DATA_PATH = joinpath(dirname(@__DIR__), "data", "IP2LOCATION-COUNTRY-INFORMATION.CSV")
+const DATA_COLS = (alpha2=1, name=2, alpha3=3, numeric=4)
 
 const STRICT = Ref(false)
 
@@ -359,14 +359,14 @@ end
 ### populate default countries at precompile-time
 
 function add_default_countries()
-    table = readdlm(joinpath(DATA_DIR, "data", "countries", "en", "world.csv"), ',', String)
-    @assert size(table, 2) == 4
-    @assert table[1,:] == ["id", "alpha2", "alpha3", "name"]
-    for i in 2:size(table, 1)
-        numeric = parse(Int16, table[i,1])
-        alpha2 = table[i,2]
-        alpha3 = table[i,3]
-        name = table[i,4]
+    table = readdlm(DATA_PATH, ',', String)
+    nrows, ncols = size(table)
+    @assert nrows == 250
+    for i in 2:nrows
+        numeric = parse(Int16, table[i,DATA_COLS.numeric])
+        alpha2 = table[i,DATA_COLS.alpha2]
+        alpha3 = table[i,DATA_COLS.alpha3]
+        name = table[i,DATA_COLS.name]
         new_country(; numeric, alpha2, alpha3, name)
     end
 end

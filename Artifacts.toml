@@ -1,6 +1,0 @@
-["countries-2.5.0"]
-git-tree-sha1 = "3cf88c080e7738732e030b24f7dbf2c7f64c9a20"
-
-    [["countries-2.5.0".download]]
-    sha256 = "99138540350d4be0e2ba58faea11884e2090f3b0a0348c7f679778bd94a3eeb6"
-    url = "https://github.com/stefangabos/world_countries/archive/refs/tags/2.5.0.tar.gz"
