@@ -21,6 +21,9 @@ using DelimitedFiles: readdlm
 
 export Country, country_numeric, country_alpha2, country_alpha3, country_name, country_assigned, new_country, alias_country, each_country
 
+
+### constructors
+
 """
     Country(id)
 
@@ -105,6 +108,9 @@ end
 
 Country(x::Country) = x
 
+
+### inspect countries
+
 """
     country_numeric(country)
 
@@ -173,6 +179,29 @@ false
 """
 country_assigned(c) = @inbounds ASSIGNED[Country(c).idx]
 
+"""
+    each_country()
+
+Iterator over each assigned country.
+
+Example:
+```julia-repl
+julia> collect(each_country())
+250-element Vector{Country}:
+ AD: Andorra
+ AE: United Arab Emirates
+ ⋮
+ ZM: Zambia
+ ZW: Zimbabwe
+```
+"""
+function each_country()
+    return (c for c in COUNTRIES if country_assigned(c))
+end
+
+
+### overload Base
+
 function Base.print(io::IO, c::Country)
     print(io, country_alpha2(c))
 end
@@ -219,6 +248,9 @@ end
 function Base.isless(c1::Country, c2::Country)
     isless(c1.idx, c2.idx)
 end
+
+
+### new countries
 
 function _check_numeric(x)
     x = convert(Int16, x)
@@ -323,25 +355,6 @@ function alias_country(name, country)
     return
 end
 
-"""
-    each_country()
-
-Iterator over each assigned country.
-
-Example:
-```julia-repl
-julia> collect(each_country())
-250-element Vector{Country}:
- AD: Andorra
- AE: United Arab Emirates
- ⋮
- ZM: Zambia
- ZW: Zimbabwe
-```
-"""
-function each_country()
-    return (c for c in COUNTRIES if country_assigned(c))
-end
 
 ### populate default countries at precompile-time
 
@@ -359,5 +372,24 @@ function add_default_countries()
 end
 
 add_default_countries()
+
+
+### precompile
+
+for country in Any["GB", "GBR", "United Kingdom", 826, Country("GB"), Country("ZZ")]
+    Country(country)
+    country_alpha2(country)
+    country_alpha3(country)
+    country_assigned(country)
+    country_name(country)
+    country_numeric(country)
+end
+for country in ["GB", "gb", "Gb", "FOO", "foo", "Foo", "FOOO", "fooo", "Fooo"]
+    try
+        Country(country)
+    catch
+    end
+end
+collect(each_country())
 
 end # module
