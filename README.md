@@ -207,9 +207,3 @@ julia> collect(each_country())
  ZM: Zambia
  ZW: Zimbabwe
 ```
-
-## Attribution
-
-This site or product includes IP2Location™ Country Information which is available from https://www.ip2location.com.
-
-(Specifically it was downloaded from https://www.ip2location.com/free/country-information. Last updated 14 March 2022.)
