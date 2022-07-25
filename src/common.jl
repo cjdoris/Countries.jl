@@ -131,6 +131,7 @@ function new_entry(x; kw...)
         end
     end
     db.assigned[x.code] = true
+    empty!(db.cache)
     return
 end
 
