@@ -11,7 +11,7 @@ Common.code_type(::Type{Country}) = Common.Alpha2()
 Common.lookup_length(::Type{Country}) = 4
 Common.database(::Type{Country}) = DB
 
-const DB = Common.Database{Country}(fields=(alpha2=String, alpha3=String, name=String, numeric=Int16))
+const DB = Common.Database{Country}(fields=(alpha2=String, alpha3=String, name=String, numeric=Int16, official_name=String, common_name=String))
 
 Country(x::Country) = x
 Country(x::AbstractString) = Common.lookup(Country, x)
@@ -22,20 +22,34 @@ country_alpha2(x) = Common.get_field(:alpha2, Country(x), "")
 
 country_name(x) = Common.get_field(:name, Country(x), "")
 
+country_official_name(x) = Common.get_field(:official_name, Country(x), "")
+
+country_common_name(x) = Common.get_field(:common_name, Country(x), "")
+
 country_numeric(x) = Common.get_field(:numeric, Country(x), zero(Int16))
 
 country_assigned(x) = Common.assigned(Country(x))
 
-function new_country(; alpha2, alpha3="", name="", numeric=0)
+function new_country(; alpha2, alpha3="", name="", numeric=0, official_name="", common_name="")
     # validate the inputs
     alpha3 = isempty(alpha3) ? "" : Common.validate_code(Common.Alpha3(), alpha3)
     alpha2 = Common.validate_code(Common.Alpha2(), alpha2)
     name = convert(String, name)
+    official_name = convert(String, official_name)
+    common_name = convert(String, common_name)
     numeric = convert(Int16, numeric)
-    0 ≤ numeric ≤ 999 || error("numeric must be between 0 and 999")
+    if !(0 ≤ numeric ≤ 999)
+        error("numeric must be between 0 and 999")
+    end
+    if isempty(official_name)
+        official_name = name
+    end
+    if isempty(common_name)
+        common_name = name
+    end
     country = Country(alpha2)
     # add the new fields
-    Common.new_entry(country; alpha2, alpha3, name, numeric)
+    Common.new_entry(country; alpha2, alpha3, name, numeric, common_name, official_name)
 end
 
 const DATA_PATH = joinpath(Common.DATA_ROOT, "iso_3166-1.tsv")
@@ -46,8 +60,10 @@ let
         alpha2 = row[1]
         alpha3 = row[2]
         name = row[3]
+        official_name = row[6]
+        common_name = row[7]
         numeric = parse(Int16, row[4])
-        new_country(; alpha3, alpha2, name, numeric)
+        new_country(; alpha3, alpha2, name, numeric, official_name, common_name)
     end
 end
 
