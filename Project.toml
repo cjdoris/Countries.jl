@@ -1,7 +1,7 @@
 name = "Countries"
 uuid = "5bf49175-83fb-4b6d-82b5-d6ded85154ae"
 authors = ["Christopher Doris <github.com/cjdoris>"]
-version = "0.2.2"
+version = "0.3.0"
 
 [deps]
 JSON3 = "0f8b85d8-7281-11e9-16c2-39a750bddbf1"
