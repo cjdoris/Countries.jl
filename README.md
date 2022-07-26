@@ -64,9 +64,8 @@ julia> DataFrame(all_currencies)
 
 ## Exported API
 
-For each supported ISO standard, this package exports:
-- A type (e.g. `Country`); and
-- A list of all instances (e.g. `all_countries`).
+For each supported ISO standard, this package exports a type (e.g. `Country`) and a list of
+all instances of the type (e.g. `all_countries`).
 
 Information about each country (etc.) can be obtained through its fields. All fields are
 strings, except `numeric` which is an integer. Optional fields may also be `nothing`.
