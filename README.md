@@ -5,13 +5,21 @@
 [![Test Status](https://github.com/cjdoris/Countries.jl/workflows/Tests/badge.svg)](https://github.com/cjdoris/Countries.jl/actions?query=workflow%3ATests)
 [![codecov](https://codecov.io/gh/cjdoris/Countries.jl/branch/main/graph/badge.svg?token=AECCWGKRVJ)](https://codecov.io/gh/cjdoris/Countries.jl)
 
-Julia package for handling the countries on Earth.
+Julia package of information about countries, currencies and languages according to these
+ISO standards:
+- ISO 3166-1: Countries.
+- ISO 3166-2: Country subdivisions.
+- ISO 4217: Currencies.
+- ISO 639-3: Languages.
+- ISO 15924: Scripts.
 
-Includes functions to convert between different representations of countries, such as
-ISO-3166 codes (alpha2, alpha3 and numeric), country names, and the new `Country` type.
+The data can be easily converted to any table type, allowing for easy integration into data
+science workflows.
 
-All 249 countries/territories/etc. in ISO-3166 are defined by default. It is possible to add
-more user-defined countries or add aliases for existing countries.
+The data is obtained from the Julia package
+[`iso_codes_jll`](https://github.com/JuliaBinaryWrappers/iso_codes_jll.jl)
+which makes available the data from the Debian package
+[`iso-codes`](https://packages.debian.org/sid/iso-codes).
 
 ## Install
 
@@ -24,186 +32,53 @@ pkg> add Countries
 ```julia-repl
 julia> using Countries
 
-julia> country_alpha2.(["united kingdom", "france", "germany"])
-3-element Vector{String}:
- "GB"
- "FR"
- "DE"
-
-julia> country_alpha3.(["united kingdom", "france", "germany"])
-3-element Vector{String}:
- "GBR"
- "FRA"
- "DEU"
-
-julia> country_numeric.(["united kingdom", "france", "germany"])
-3-element Vector{Int16}:
- 826
- 250
- 276
-
-julia> country_name.(["united kingdom", "france", "germany"])
-3-element Vector{String}:
- "United Kingdom of Great Britain and Northern Ireland"
- "France"
- "Germany"
-
-julia> Country.(["united kingdom", "france", "germany"])
-3-element Vector{Country}:
- GB: United Kingdom of Great Britain and Northern Ireland
- FR: France
- DE: Germany
-```
-
-## Documentation
-
-```julia
-Country(id)
-```
-
-A country with the given `id`.
-
-It is canonically represented by its alpha2 code, such as "GB". Two countries with
-the same code are identically equal.
-
-The following are all ways to construct the UK:
-```julia
-# ISO-3166 codes
-Country(826)
-Country("GBR")
-Country("gbr")
-Country("GB")
-
-# by name (or unambiguous partial name)
-Country("United Kingdom of Great Britain and Northern Ireland")
-Country("United Kingdom")
-Country("Britain")
-
-# by alias
-alias_country("England", "GB")
-Country("england")
-```
-
----
-
-```julia
-country_numeric(country)
-```
-
-The numeric code of the given country.
-
-Example:
-```julia-repl
-julia> country_numeric("GBR")
-826
-```
-
----
-
-```julia
-country_alpha2(country)
-```
-
-The alpha2 code of the given country.
-
-Example:
-```julia-repl
-julia> country_alpha2("GBR")
-"GB"
-```
-
----
-
-```julia
-country_alpha3(country)
-```
-
-The alpha3 code of the given country.
-
-Example:
-```julia-repl
-julia> country_alpha3("United Kingdom")
-"GBR"
-```
-
----
-
-```julia
-country_name(country)
-```
-
-The name of the given country.
-
-Example:
-```julia-repl
-julia> country_name("GB")
-"United Kingdom of Great Britain and Northern Ireland"
-```
-
----
-
-```julia
-country_assigned(country)
-```
-
-True if the given country is assigned.
-
-Example:
-```julia-repl
-julia> country_assigned("GB")
-true
-
-julia> country_assigned("ZZ")
-false
-```
-
----
-
-```julia
-new_country(; alpha2, alpha3="", numeric=0, name="")
-```
-
-Register a new country with the given data.
-
-Example:
-```julia-repl
-julia> new_country(alpha2="ZZ", alpha3="ZZZ", numeric=999, name="Zedland")
-
-julia> Country("zzz")
-ZZ: Zedland
-```
-
----
-
-```julia
-alias_country(alias, country)
-```
-
-Register an alias for the given country so that `Country(alias)` returns `country`.
-
-Example:
-```julia-repl
-julia> alias_country("England", "GBR")
-
-julia> Country("england")
-GB: United Kingdom of Great Britain and Northern Ireland
-```
-
----
-
-```julia
-each_country()
-```
-
-Iterator over each assigned country.
-
-Example:
-```julia-repl
-julia> collect(each_country())
-250-element Vector{Country}:
- AD: Andorra
- AE: United Arab Emirates
+julia> all_countries
+249-element Vector{Country}:
+ Country("AW", "ABW", "Aruba", 533, "Aruba", "Aruba", "🇦🇼")
+ Country("AF", "AFG", "Afghanistan", 4, "Islamic Republic of Afghanistan", "Afghanistan", "🇦🇫")
  ⋮
- ZM: Zambia
- ZW: Zimbabwe
+ Country("ZM", "ZMB", "Zambia", 894, "Republic of Zambia", "Zambia", "🇿🇲")
+ Country("ZW", "ZWE", "Zimbabwe", 716, "Republic of Zimbabwe", "Zimbabwe", "🇿🇼")
+
+julia> filter(x->startswith(x.alpha4, "La"), all_scripts)
+5-element Vector{Script}:
+ Script("Lana", "Tai Tham (Lanna)", 351)
+ Script("Laoo", "Lao", 356)
+ Script("Latf", "Latin (Fraktur variant)", 217)
+ Script("Latg", "Latin (Gaelic variant)", 216)
+ Script("Latn", "Latin", 215)
+
+julia> using DataFrames
+
+julia> DataFrame(all_currencies)
+181×3 DataFrame
+ Row │ alpha3  name                               numeric
+     │ String  String                             Int16
+─────┼────────────────────────────────────────────────────
+   1 │ AED     UAE Dirham                             784
+   2 │ AFN     Afghani                                971
+  ⋮  │   ⋮                     ⋮                     ⋮
+ 180 │ ZMW     Zambian Kwacha                         967
+ 181 │ ZWL     Zimbabwe Dollar                        932
 ```
+
+## Exported API
+
+For each supported ISO standard, this package exports:
+- A type (e.g. `Country`); and
+- A list of all instances (e.g. `all_countries`).
+
+Information about each country (etc.) can be obtained through its fields. All fields are
+strings, except `numeric` which is an integer. Optional fields may also be `nothing`.
+
+| Standard | Type | List | Fields |
+| -------- | ---- | ---- | ------ |
+| ISO 3166-1: Countries | `Country` | `all_countries` | `alpha2`, `alpha3`, `name`, `numeric`, `official_name`, `common_name`, `flag` (optional) |
+| ISO 3166-2: Country Subdivisions | `CountrySubdivision` | `all_country_subdivisions` | `code`, `name`, `type`, `parent` (optional) |
+| ISO 4217: Currencies | `Currency` | `all_currencies` | `alpha3`, `name`, `numeric` |
+| ISO 639-3: Languages | `Language` | `all_languages` | `alpha2` (optional), `alpha3`, `name`, `scope`, `type`, `common_name`, `inverted_name`, `bibliographic` (optional) |
+| ISO 15924: Scripts | `Script` | `all_scripts` | `alpha4`, `name`, `numeric` |
+
+These lists also satisfy the
+[`Tables.jl`](https://github.com/JuliaData/Tables.jl)
+interface, so can be converted to your favourite table type.
