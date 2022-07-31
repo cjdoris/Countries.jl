@@ -136,7 +136,7 @@ struct Language
     type::String
     common_name::String
     inverted_name::String
-    bibliographic::Union{String,Nothing}
+    bibliographic::String
 end
 
 function _parse(::Type{Language}, item)
@@ -147,7 +147,7 @@ function _parse(::Type{Language}, item)
     type = _getstr(item, :type)
     common_name = _getstr(item, :common_name, name)
     inverted_name = _getstr(item, :inverted_name, name)
-    bibliographic = _getstr(item, :bibliographic, nothing)
+    bibliographic = _getstr(item, :bibliographic, alpha3)
     return Language(alpha2, alpha3, name, scope, type, common_name, inverted_name, bibliographic)
 end
 
