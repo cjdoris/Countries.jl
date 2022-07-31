@@ -137,5 +137,32 @@ end
 
 const all_scripts = _parse_json(Script, "15924")
 
+### ISO LOOKUP FUNCTIONS
+
+for (t, db, n) in ((:Country, :all_countries, :country), (:CountrySubdivision, :all_country_subdivisions, :country_subdivision), (:Currency, :all_currencies, :currency), (:Language, :all_languages, :language), (:Script, :all_scripts, :script))
+    f = Symbol("lookup_$n")
+    @eval begin
+        export $f
+        
+        """
+            $($f)(field_name::Symbol, lookup_value)
+        
+        Find the first $($t) whose `field_name` has value `lookup_value`.
+        
+        # Example
+        
+        ```julia
+        $($f)(:name, "Some $($t) Name")
+        ```
+        """
+        function $f(field_name::Symbol, lookup_value)
+            i = findfirst($db) do x
+                v = getfield(x, field_name)
+                !isnothing(v) && v == lookup_value
+            end
+            return isnothing(i) ? i : $db[i]
+        end
+    end
+end
 
 end # module
