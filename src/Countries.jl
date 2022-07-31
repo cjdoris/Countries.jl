@@ -22,11 +22,11 @@ _getstr(item, key) = item[key]::String
 _getstr(item, key, dflt) = get(item, key, dflt)::Union{String,typeof(dflt)}
 _getnum(item, key) = parse(Int16, _getstr(item, key))
 
-function _make_lookup(keys, items)
+function _make_lookup(items)
     strs = Dict{String,Int}()
     ints = Dict{Int,Int}()
     for i in eachindex(items)
-        for k in keys(items[i])
+        for k in _lookup_keys(items[i])
             if k isa Integer
                 @assert get(ints, k, i) == i
                 ints[k] = i
@@ -75,7 +75,9 @@ end
 
 const all_countries = _parse_json(Country, "3166-1")
 
-const _lookup_countries = _make_lookup(x -> (x.alpha2, x.alpha3, x.flag, x.numeric,), all_countries)
+_lookup_keys(x::Country) = (x.alpha2, x.alpha3, x.flag, x.numeric)
+
+const _lookup_countries = _make_lookup(all_countries)
 
 get_country(k) = _lookup(k, all_countries, _lookup_countries)
 
@@ -99,7 +101,9 @@ end
 
 const all_country_subdivisions = _parse_json(CountrySubdivision, "3166-2")
 
-const _lookup_country_subdivisions = _make_lookup(x -> (x.code,), all_country_subdivisions)
+_lookup_keys(x::CountrySubdivision) = (x.code,)
+
+const _lookup_country_subdivisions = _make_lookup(all_country_subdivisions)
 
 get_country_subdivision(k) = _lookup(k, all_country_subdivisions, _lookup_country_subdivisions)
 
@@ -121,7 +125,9 @@ end
 
 const all_currencies = _parse_json(Currency, "4217")
 
-const _lookup_currencies = _make_lookup(x -> (x.alpha3, x.numeric,), all_currencies)
+_lookup_keys(x::Currency) = (x.alpha3, x.numeric)
+
+const _lookup_currencies = _make_lookup(all_currencies)
 
 get_currency(k) = _lookup(k, all_currencies, _lookup_currencies)
 
@@ -153,7 +159,9 @@ end
 
 const all_languages = _parse_json(Language, "639-3")
 
-const _lookup_languages = _make_lookup(x -> (x.alpha2, x.alpha3, x.bibliographic,), all_languages)
+_lookup_keys(x::Language) = (x.alpha2, x.alpha3, x.bibliographic)
+
+const _lookup_languages = _make_lookup(all_languages)
 
 get_language(k) = _lookup(k, all_languages, _lookup_languages)
 
@@ -175,7 +183,9 @@ end
 
 const all_scripts = _parse_json(Script, "15924")
 
-const _lookup_scripts = _make_lookup(x -> (x.alpha4, x.numeric, x.name), all_scripts)
+_lookup_keys(x::Script) = (x.alpha4, x.numeric, x.name)
+
+const _lookup_scripts = _make_lookup(all_scripts)
 
 get_script(k) = _lookup(k, all_scripts, _lookup_scripts)
 

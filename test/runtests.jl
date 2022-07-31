@@ -8,7 +8,11 @@ using Test, Countries
     Countries._parse_json(Countries.Currency, "4217")
     Countries._parse_json(Countries.Language, "639-3")
     Countries._parse_json(Countries.Script, "15924")
-    Countries._make_lookup(x->(), Countries.all_countries)
+    Countries._make_lookup(Countries.all_countries)
+    Countries._make_lookup(Countries.all_country_subdivisions)
+    Countries._make_lookup(Countries.all_currencies)
+    Countries._make_lookup(Countries.all_languages)
+    Countries._make_lookup(Countries.all_scripts)
 
     @test Countries.all_countries isa Vector{Countries.Country}
     @test Countries.all_country_subdivisions isa Vector{Countries.CountrySubdivision}
