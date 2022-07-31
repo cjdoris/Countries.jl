@@ -39,6 +39,9 @@ julia> all_countries
  Country("ZM", "ZMB", "Zambia", 894, "Republic of Zambia", "Zambia", "🇿🇲")
  Country("ZW", "ZWE", "Zimbabwe", 716, "Republic of Zimbabwe", "Zimbabwe", "🇿🇼")
 
+julia> get_language("en")
+Language("en", "eng", "English", "I", "L", "English", "English", "eng")
+
 julia> filter(x->startswith(x.alpha4, "La"), all_scripts)
 5-element Vector{Script}:
  Script("Lana", "Tai Tham (Lanna)", 351)
@@ -65,18 +68,18 @@ julia> DataFrame(all_currencies)
 
 For each supported ISO standard, this package exports a type (e.g. `Country`), a list of all
 instances of the type (e.g. `all_countries`), and a lookup function (e.g. `get_country`) to
-get an instance from one of its codes.
+get an instance from any of its codes.
 
 Information about each country (etc.) can be obtained through its fields. All fields are
 strings, except `numeric` which is an integer. Optional fields may also be `nothing`.
 
-| Standard | Type | List | Lookup | Fields |
-| -------- | ---- | ---- | ------ | ------ |
-| ISO 3166-1: Countries | `Country` | `all_countries` | `get_country` | `alpha2`, `alpha3`, `name`, `numeric`, `official_name`, `common_name`, `flag` (optional) |
-| ISO 3166-2: Country Subdivisions | `CountrySubdivision` | `all_country_subdivisions` | `get_country_subdivision` | `code`, `name`, `type`, `parent` (optional) |
-| ISO 4217: Currencies | `Currency` | `all_currencies` | `get_currency` | `alpha3`, `name`, `numeric` |
-| ISO 639-3: Languages | `Language` | `all_languages` | `get_languate` | `alpha2` (optional), `alpha3`, `name`, `scope`, `type`, `common_name`, `inverted_name`, `bibliographic` (optional) |
-| ISO 15924: Scripts | `Script` | `all_scripts` | `get_script` | `alpha4`, `name`, `numeric` |
+| Standard | API | Fields |
+| -------- | --- | ------ |
+| ISO 3166-1: Countries | `Country`, `all_countries`, `get_country` | `alpha2`, `alpha3`, `name`, `numeric`, `official_name`, `common_name`, `flag` (optional) |
+| ISO 3166-2: Country Subdivisions | `CountrySubdivision`, `all_country_subdivisions`, `get_country_subdivision` | `code`, `name`, `type`, `parent` (optional) |
+| ISO 4217: Currencies | `Currency`, `all_currencies`, `get_currency` | `alpha3`, `name`, `numeric` |
+| ISO 639-3: Languages | `Language`, `all_languages`, `get_languate` | `alpha2` (optional), `alpha3`, `name`, `scope`, `type`, `common_name`, `inverted_name`, `bibliographic` (optional) |
+| ISO 15924: Scripts | `Script`, `all_scripts`, `get_script` | `alpha4`, `name`, `numeric` |
 
 These lists also satisfy the
 [`Tables.jl`](https://github.com/JuliaData/Tables.jl)
