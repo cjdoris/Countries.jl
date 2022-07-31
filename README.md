@@ -63,19 +63,20 @@ julia> DataFrame(all_currencies)
 
 ## Exported API
 
-For each supported ISO standard, this package exports a type (e.g. `Country`) and a list of
-all instances of the type (e.g. `all_countries`).
+For each supported ISO standard, this package exports a type (e.g. `Country`), a list of all
+instances of the type (e.g. `all_countries`), and a lookup function (e.g. `get_country`) to
+get an instance from one of its codes.
 
 Information about each country (etc.) can be obtained through its fields. All fields are
 strings, except `numeric` which is an integer. Optional fields may also be `nothing`.
 
-| Standard | Type | List | Fields |
-| -------- | ---- | ---- | ------ |
-| ISO 3166-1: Countries | `Country` | `all_countries` | `alpha2`, `alpha3`, `name`, `numeric`, `official_name`, `common_name`, `flag` (optional) |
-| ISO 3166-2: Country Subdivisions | `CountrySubdivision` | `all_country_subdivisions` | `code`, `name`, `type`, `parent` (optional) |
-| ISO 4217: Currencies | `Currency` | `all_currencies` | `alpha3`, `name`, `numeric` |
-| ISO 639-3: Languages | `Language` | `all_languages` | `alpha2` (optional), `alpha3`, `name`, `scope`, `type`, `common_name`, `inverted_name`, `bibliographic` (optional) |
-| ISO 15924: Scripts | `Script` | `all_scripts` | `alpha4`, `name`, `numeric` |
+| Standard | Type | List | Lookup | Fields |
+| -------- | ---- | ---- | ------ | ------ |
+| ISO 3166-1: Countries | `Country` | `all_countries` | `get_country` | `alpha2`, `alpha3`, `name`, `numeric`, `official_name`, `common_name`, `flag` (optional) |
+| ISO 3166-2: Country Subdivisions | `CountrySubdivision` | `all_country_subdivisions` | `get_country_subdivision` | `code`, `name`, `type`, `parent` (optional) |
+| ISO 4217: Currencies | `Currency` | `all_currencies` | `get_currency` | `alpha3`, `name`, `numeric` |
+| ISO 639-3: Languages | `Language` | `all_languages` | `get_languate` | `alpha2` (optional), `alpha3`, `name`, `scope`, `type`, `common_name`, `inverted_name`, `bibliographic` (optional) |
+| ISO 15924: Scripts | `Script` | `all_scripts` | `get_script` | `alpha4`, `name`, `numeric` |
 
 These lists also satisfy the
 [`Tables.jl`](https://github.com/JuliaData/Tables.jl)
