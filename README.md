@@ -78,7 +78,7 @@ strings, except `numeric` which is an integer. Optional fields may also be `noth
 | ISO 3166-1: Countries | `Country`, `all_countries`, `get_country` | `alpha2`, `alpha3`, `name`, `numeric`, `official_name`, `common_name`, `flag` (optional) |
 | ISO 3166-2: Country Subdivisions | `CountrySubdivision`, `all_country_subdivisions`, `get_country_subdivision` | `code`, `name`, `type`, `parent` (optional) |
 | ISO 4217: Currencies | `Currency`, `all_currencies`, `get_currency` | `alpha3`, `name`, `numeric` |
-| ISO 639-3: Languages | `Language`, `all_languages`, `get_language` | `alpha2` (optional), `alpha3`, `name`, `scope`, `type`, `common_name`, `inverted_name`, `bibliographic` (optional) |
+| ISO 639-3: Languages | `Language`, `all_languages`, `get_language` | `alpha2` (optional), `alpha3`, `name`, `scope`, `type`, `common_name`, `inverted_name`, `bibliographic` |
 | ISO 15924: Scripts | `Script`, `all_scripts`, `get_script` | `alpha4`, `name`, `numeric` |
 
 These lists also satisfy the
