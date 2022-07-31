@@ -156,6 +156,7 @@ for (t, db, n) in ((:Country, :all_countries, :country), (:CountrySubdivision, :
         ```
         """
         function $f(field_name::Symbol, lookup_value)
+            field_name ∉ fieldnames($t) && throw(ArgumentError("Field $field_name does not exist for type $($t)"))
             i = findfirst($db) do x
                 v = getfield(x, field_name)
                 !isnothing(v) && v == lookup_value
