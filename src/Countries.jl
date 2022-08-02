@@ -1,7 +1,8 @@
 module Countries
 
 import JSON3
-import iso_codes_jll
+import iso_codes_jll: iso_codes_dir
+import ReadOnlyArrays: ReadOnlyArray
 
 export Country, all_countries, get_country
 export CountrySubdivision, all_country_subdivisions, get_country_subdivision
@@ -12,11 +13,11 @@ export Script, all_scripts, get_script
 
 ### CORE
 
-_json_path(name) = joinpath(iso_codes_jll.iso_codes_dir::String, "json", "iso_$name.json")
+_json_path(name) = joinpath(iso_codes_dir::String, "json", "iso_$name.json")
 
 _load_json(name) = open(JSON3.read, _json_path(name))[name]
 
-_parse_json(::Type{T}, name) where {T} = T[_parse(T, item) for item in _load_json(name)]
+_parse_json(::Type{T}, name) where {T} = ReadOnlyArray(T[_parse(T, item) for item in _load_json(name)])
 
 _getstr(item, key) = item[key]::String
 _getstr(item, key, dflt) = get(item, key, dflt)::Union{String,typeof(dflt)}
@@ -183,7 +184,7 @@ end
 
 const all_scripts = _parse_json(Script, "15924")
 
-_lookup_keys(x::Script) = (x.alpha4, x.numeric, x.name)
+_lookup_keys(x::Script) = (x.alpha4, x.numeric)
 
 const _lookup_scripts = _make_lookup(all_scripts)
 
