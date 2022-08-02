@@ -12,7 +12,7 @@ ISO standards:
 - ISO 639-3: Languages.
 - ISO 15924: Scripts.
 
-The data can be easily converted to any table type, allowing for easy integration into data
+The data can be converted to any table type, allowing for easy integration into data
 science workflows.
 
 The data is obtained from the Julia package
@@ -73,6 +73,10 @@ get an instance from any of its codes.
 Information about each country (etc.) can be obtained through its fields. All fields are
 strings, except `numeric` which is an integer. Optional fields may also be `nothing`.
 
+These lists also satisfy the
+[`Tables.jl`](https://github.com/JuliaData/Tables.jl)
+interface, so can be converted to your favourite table type.
+
 | Standard | API | Fields |
 | -------- | --- | ------ |
 | ISO 3166-1: Countries | `Country`, `all_countries`, `get_country` | `alpha2`, `alpha3`, `name`, `numeric`, `official_name`, `common_name`, `flag` (optional) |
@@ -80,7 +84,3 @@ strings, except `numeric` which is an integer. Optional fields may also be `noth
 | ISO 4217: Currencies | `Currency`, `all_currencies`, `get_currency` | `alpha3`, `name`, `numeric` |
 | ISO 639-3: Languages | `Language`, `all_languages`, `get_language` | `alpha2` (optional), `alpha3`, `name`, `scope`, `type`, `common_name`, `inverted_name`, `bibliographic` |
 | ISO 15924: Scripts | `Script`, `all_scripts`, `get_script` | `alpha4`, `name`, `numeric` |
-
-These lists also satisfy the
-[`Tables.jl`](https://github.com/JuliaData/Tables.jl)
-interface, so can be converted to your favourite table type.
