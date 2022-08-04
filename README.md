@@ -31,7 +31,7 @@ pkg> add Countries
 ```julia-repl
 julia> using Countries
 
-julia> all_countries
+julia> all_countries()
 249-element Vector{Country}:
  Country("AW", "ABW", "Aruba", 533, "Aruba", "Aruba", "🇦🇼")
  Country("AF", "AFG", "Afghanistan", 4, "Islamic Republic of Afghanistan", "Afghanistan", "🇦🇫")
@@ -42,7 +42,7 @@ julia> all_countries
 julia> get_language("en")
 Language("en", "eng", "English", "I", "L", "English", "English", "eng")
 
-julia> filter(x->startswith(x.alpha4, "La"), all_scripts)
+julia> filter(x->startswith(x.alpha4, "La"), all_scripts())
 5-element Vector{Script}:
  Script("Lana", "Tai Tham (Lanna)", 351)
  Script("Laoo", "Lao", 356)
@@ -52,7 +52,7 @@ julia> filter(x->startswith(x.alpha4, "La"), all_scripts)
 
 julia> using DataFrames
 
-julia> DataFrame(all_currencies)
+julia> DataFrame(all_currencies())
 181×3 DataFrame
  Row │ alpha3  name                               numeric
      │ String  String                             Int16
@@ -66,14 +66,15 @@ julia> DataFrame(all_currencies)
 
 ## Exported API
 
-For each supported ISO standard, this package exports a type (e.g. `Country`), a list of all
-instances of the type (e.g. `all_countries`), and a lookup function (e.g. `get_country`) to
-get an instance from any of its codes.
+For each supported ISO standard, this package exports:
+- a type (e.g. `Country`) to hold information about an instance from the standard;
+- a function (e.g. `all_countries`) returning a list of all instances; and
+- a lookup function (e.g. `get_country`) to get an instance from any of its codes.
 
-Information about each country (etc.) can be obtained through its fields. All fields are
-strings, except `numeric` which is an integer. Optional fields may also be `nothing`.
+Information about an instance can be obtained through its fields. All fields are strings,
+except `numeric` which is an integer. Optional fields may also be `nothing`.
 
-These lists also satisfy the
+The lists also satisfy the
 [`Tables.jl`](https://github.com/JuliaData/Tables.jl)
 interface, so can be converted to your favourite table type.
 

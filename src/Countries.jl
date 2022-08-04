@@ -74,13 +74,15 @@ function _parse(::Type{Country}, item)
     return Country(alpha2, alpha3, name, numeric, official_name, common_name, flag)
 end
 
-const all_countries = _parse_json(Country, "3166-1")
+const _all_countries = _parse_json(Country, "3166-1")
+
+all_countries() = _all_countries
 
 _lookup_keys(x::Country) = (x.alpha2, x.alpha3, x.flag, x.numeric)
 
-const _lookup_countries = _make_lookup(all_countries)
+const _lookup_countries = _make_lookup(_all_countries)
 
-get_country(k) = _lookup(k, all_countries, _lookup_countries)
+get_country(k) = _lookup(k, _all_countries, _lookup_countries)
 
 
 ### ISO 3166-2 COUNTRY SUBDIVISIONS
@@ -100,13 +102,15 @@ function _parse(::Type{CountrySubdivision}, item)
     return CountrySubdivision(code, name, type, parent)
 end
 
-const all_country_subdivisions = _parse_json(CountrySubdivision, "3166-2")
+const _all_country_subdivisions = _parse_json(CountrySubdivision, "3166-2")
+
+all_country_subdivisions() = _all_country_subdivisions
 
 _lookup_keys(x::CountrySubdivision) = (x.code,)
 
-const _lookup_country_subdivisions = _make_lookup(all_country_subdivisions)
+const _lookup_country_subdivisions = _make_lookup(_all_country_subdivisions)
 
-get_country_subdivision(k) = _lookup(k, all_country_subdivisions, _lookup_country_subdivisions)
+get_country_subdivision(k) = _lookup(k, _all_country_subdivisions, _lookup_country_subdivisions)
 
 
 ### ISO 4217 CURRENCIES
@@ -124,13 +128,15 @@ function _parse(::Type{Currency}, item)
     return Currency(alpha3, name, numeric)
 end
 
-const all_currencies = _parse_json(Currency, "4217")
+const _all_currencies = _parse_json(Currency, "4217")
+
+all_currencies() = _all_currencies
 
 _lookup_keys(x::Currency) = (x.alpha3, x.numeric)
 
-const _lookup_currencies = _make_lookup(all_currencies)
+const _lookup_currencies = _make_lookup(_all_currencies)
 
-get_currency(k) = _lookup(k, all_currencies, _lookup_currencies)
+get_currency(k) = _lookup(k, _all_currencies, _lookup_currencies)
 
 
 ### ISO 639-3 LANGUAGES
@@ -158,13 +164,15 @@ function _parse(::Type{Language}, item)
     return Language(alpha2, alpha3, name, scope, type, common_name, inverted_name, bibliographic)
 end
 
-const all_languages = _parse_json(Language, "639-3")
+const _all_languages = _parse_json(Language, "639-3")
+
+all_languages() = _all_languages
 
 _lookup_keys(x::Language) = (x.alpha2, x.alpha3, x.bibliographic)
 
-const _lookup_languages = _make_lookup(all_languages)
+const _lookup_languages = _make_lookup(_all_languages)
 
-get_language(k) = _lookup(k, all_languages, _lookup_languages)
+get_language(k) = _lookup(k, _all_languages, _lookup_languages)
 
 
 ### ISO 15924 SCRIPTS
@@ -182,12 +190,14 @@ function _parse(::Type{Script}, item)
     return Script(alpha4, name, numeric)
 end
 
-const all_scripts = _parse_json(Script, "15924")
+const _all_scripts = _parse_json(Script, "15924")
+
+all_scripts() = _all_scripts
 
 _lookup_keys(x::Script) = (x.alpha4, x.numeric)
 
-const _lookup_scripts = _make_lookup(all_scripts)
+const _lookup_scripts = _make_lookup(_all_scripts)
 
-get_script(k) = _lookup(k, all_scripts, _lookup_scripts)
+get_script(k) = _lookup(k, _all_scripts, _lookup_scripts)
 
 end # module
