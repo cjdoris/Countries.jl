@@ -200,4 +200,38 @@ const _lookup_scripts = _make_lookup(_all_scripts)
 
 get_script(k) = _lookup(k, _all_scripts, _lookup_scripts)
 
+
+### DOCSTRINGS
+
+for (what, whats, T, all, get, codes) in [
+    ("country", "countries", :Country, :all_countries, :get_country, "alpha2, alpha3 or numeric"),
+    ("country subdivision", "country subdivisions", :CountrySubdivision, :all_country_subdivisions, :get_country_subdivision, "code"),
+    ("currency", "currencies", :Currency, :all_currencies, :get_currency, "alpha3 or numeric"),
+    ("language", "languages", :Language, :all_languages, :get_language, "alpha2, alpha3 or bibliographic"),
+    ("script", "scripts", :Script, :all_scripts, :get_script, "alpha4 or numeric"),
+]
+    fields = @eval join(["`$n`"*(Nothing <: fieldtype($T, n) ? " (optional)" : "") for n in fieldnames($T)], ", ")
+
+    @eval @doc $("""
+        $T
+
+    A $what. Information can be accessed from its fields.
+
+    Its fields are: $fields.
+
+    Returned by `$get` and `$all`.
+    """) $T
+    @eval @doc $("""
+        $all()
+
+    A list of all $whats.
+    """) $all
+    codes_suffix = codes == "code" ? "" : " ($codes)"
+    @eval @doc $("""
+        $get(code)
+
+    The unique $what with the given `code`$codes_suffix.
+    """) $get
+end
+
 end # module
