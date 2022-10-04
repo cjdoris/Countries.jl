@@ -62,6 +62,28 @@ julia> DataFrame(all_currencies())
   ⋮  │   ⋮                     ⋮                     ⋮
  180 │ ZMW     Zambian Kwacha                         967
  181 │ ZWL     Zimbabwe Dollar                        932
+ 
+ julia> my_data = DataFrame(Country=["NGA", "CA", "KOR", "NZ"], Widgets=[400, 12000, 100, 3000])
+4×2 DataFrame
+ Row │ Country  Widgets
+     │ String   Int64
+─────┼──────────────────
+   1 │ NGA          400
+   2 │ CA         12000
+   3 │ KOR          100
+   4 │ NZ          3000
+
+julia> my_data.Country_Name = [x.name for x in get_country.(my_data.Country)];
+
+julia> my_data
+4×3 DataFrame
+ Row │ Country  Widgets  Country_Name
+     │ String   Int64    String
+─────┼──────────────────────────────────────
+   1 │ NGA          400  Nigeria
+   2 │ CA         12000  Canada
+   3 │ KOR          100  Korea, Republic of
+   4 │ NZ          3000  New Zealand
 ```
 
 ## Exported API
