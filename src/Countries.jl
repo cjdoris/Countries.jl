@@ -1,6 +1,6 @@
 module Countries
 
-import JSON3
+import JSON
 import iso_codes_jll: iso_codes_dir
 import ReadOnlyArrays: ReadOnlyArray
 
@@ -15,12 +15,14 @@ export Script, all_scripts, get_script
 
 _json_path(name) = joinpath(iso_codes_dir::String, "json", "iso_$name.json")
 
-_load_json(name) = open(JSON3.read, _json_path(name))[name]
+_load_json(name) = open(_json_path(name)) do io
+    JSON.parse(read(io, String))[name]
+end
 
 _parse_json(::Type{T}, name) where {T} = ReadOnlyArray(T[_parse(T, item) for item in _load_json(name)])
 
-_getstr(item, key) = item[key]::String
-_getstr(item, key, dflt) = get(item, key, dflt)::Union{String,typeof(dflt)}
+_getstr(item, key) = item[String(key)]::String
+_getstr(item, key, dflt) = get(item, String(key), dflt)::Union{String,typeof(dflt)}
 _getnum(item, key) = parse(Int16, _getstr(item, key))
 
 function _make_lookup(items)
