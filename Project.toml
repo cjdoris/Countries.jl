@@ -1,6 +1,6 @@
 name = "Countries"
 uuid = "5bf49175-83fb-4b6d-82b5-d6ded85154ae"
-version = "0.3.1"
+version = "0.3.2"
 authors = ["Christopher Doris <github.com/cjdoris>"]
 
 [deps]
